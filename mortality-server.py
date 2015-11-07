@@ -66,6 +66,38 @@ def pullData (gender):
         print "ERROR!!!"
         conn.close()
         raise
+
+def pullAverageAge():
+    conn = sqlite3.connect(MORTALITYDB)
+    cur = conn.cursor()
+
+    try:
+        cur.execute("""SELECT year, Cause_Recode_39, Age_Key, AVG(Age_Value), COUNT(Age_Value) 
+                        FROM mortality
+                        WHERE Age_Value != '999'
+                        GROUP BY year, Cause_Recode_39, Age_Key""")
+        data = [{"year":int(year),
+                 "cause":int(cause),
+                 "ageKey":ageKey,
+                 "avgAge":avgAge,
+                 "numResp": numResp} for (year, cause, ageKey, avgAge, numResp) in  cur.fetchall()]
+        grouped_data = group_by(data,"cause")
+        for cause in grouped_data:
+            grouped_data[cause]= group_by(grouped_data[cause],"year")
+        for cause in grouped_data:
+            for year in grouped_data[cause]:
+                totalResp = 0
+                for row, i in enumerate(grouped_data[cause][year]):
+                    if row.ageKey == u'1':
+                        grouped_data[cause][year][i].ageInYears = row.avgAge
+                        totalResp += row.numResp
+                        print grouped_data[cause][year][i].ageInYears 
+
+
+    except:
+        print "ERROR!!!"
+        conn.close()
+        raise
         
 
 # URI for getting data
@@ -79,10 +111,13 @@ def pullData (gender):
 @get("/data")
 def data ():
     print list(request.query)
-    gender = request.query.gender
+    print ("Getting age data")
+    return pullAverageAge()
+    # print list(request.query)
+    # gender = request.query.gender
 
-    print "gender =", gender
-    return pullData(gender)
+    # print "gender =", gender
+    # return pullData(gender)
 
     
 # URI for getting a static file from the
