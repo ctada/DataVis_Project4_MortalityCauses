@@ -71,6 +71,7 @@ def pullAverageAge():
     conn = sqlite3.connect(MORTALITYDB)
     cur = conn.cursor()
 
+    avgAgeData = {}
     try:
         cur.execute("""SELECT year, Cause_Recode_39, Age_Key, AVG(Age_Value), COUNT(Age_Value) 
                         FROM mortality
@@ -87,19 +88,42 @@ def pullAverageAge():
         for cause in grouped_data:
             for year in grouped_data[cause]:
                 totalResp = 0
-                for row, i in enumerate(grouped_data[cause][year]):
-                    if row.ageKey == u'1':
-                        grouped_data[cause][year][i].ageInYears = row.avgAge
-                        totalResp += row.numResp
-                        print grouped_data[cause][year][i].ageInYears 
-
-
+                for i, row in enumerate(grouped_data[cause][year]):
+                    if row["ageKey"] == u'1':
+                        grouped_data[cause][year][i]["ageInYears"] = row["avgAge"]
+                        totalResp += row["numResp"]
+                    elif row["ageKey"] == u'2':
+                        grouped_data[cause][year][i]["ageInYears"] = row["avgAge"]/12
+                        totalResp += row["numResp"]
+                    elif row["ageKey"] == u'4':
+                        grouped_data[cause][year][i]["ageInYears"] = row["avgAge"]/365.25
+                        totalResp += row["numResp"]
+                    elif row["ageKey"] == u'5':
+                        grouped_data[cause][year][i]["ageInYears"] = row["avgAge"]/8670
+                        totalResp += row["numResp"]
+                    elif row["ageKey"] == u'6':
+                        grouped_data[cause][year][i]["ageInYears"] = row["avgAge"]/525600
+                        totalResp += row["numResp"]
+                for i, row in enumerate(grouped_data[cause][year]):
+                    if cause in avgAgeData:
+                        if year in avgAgeData[cause]:
+                            avgAgeData[cause][year] += row["avgAge"] * row["numResp"]/totalResp
+                        else: 
+                            avgAgeData[cause][year] = row["avgAge"] * row["numResp"]/totalResp
+                    else:
+                        avgAgeData[cause] = {}
+                        avgAgeData[cause][year] = row["avgAge"] * row["numResp"]/totalResp
+        return avgAgeData
     except:
         print "ERROR!!!"
         conn.close()
         raise
         
-
+@get("/text")
+def ageData ():
+    print list(request.query)
+    print ("Getting age data")
+    return pullAverageAge()
 # URI for getting data
 # pass a gender argument as:
 #    data?gender=M  
@@ -111,13 +135,10 @@ def pullAverageAge():
 @get("/data")
 def data ():
     print list(request.query)
-    print ("Getting age data")
-    return pullAverageAge()
-    # print list(request.query)
-    # gender = request.query.gender
+    gender = request.query.gender
 
-    # print "gender =", gender
-    # return pullData(gender)
+    print "gender =", gender
+    return pullData(gender)
 
     
 # URI for getting a static file from the
