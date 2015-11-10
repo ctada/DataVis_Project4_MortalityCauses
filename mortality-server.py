@@ -67,7 +67,63 @@ def pullData (gender):
         conn.close()
         raise
 
-def pullAverageAge():
+def pullCauseByAge():
+    conn = sqlite3.connect(MORTALITYDB)
+    cur = conn.cursor()
+
+
+    try: 
+        cur.execute("""SELECT Age_Key, Age_Value, year, Cause_Recode_39, COUNT(Cause_Recode_39) 
+                       FROM mortality
+                       WHERE Age_Value != '999'
+                       GROUP BY Age_Key, Age_Value, year, Cause_Recode_39""")
+        
+        data = {}
+        #Create a dictionary of age key, age vaule -> top cause, top value
+        for (ageKey, ageValue, year, cause, total,) in  cur.fetchall():
+            if (ageKey in data):
+                if ageValue in data[ageKey]:
+                    if year in data[ageKey][ageValue]:
+                        if (int(total) > data[ageKey][ageValue][year]["total"]):
+                            data[ageKey][ageValue][year]["total"] = int(total)
+                            data[ageKey][ageValue][year]["cause"] = int(cause)
+                    else:
+                        data[ageKey][ageValue][year] = {}
+                        data[ageKey][ageValue][year]["total"] = int(total)
+                        data[ageKey][ageValue][year]["cause"] = int(cause)
+                else:
+                    data[ageKey][ageValue] = {}
+                    data[ageKey][ageValue][year] = {}
+                    data[ageKey][ageValue][year]["total"] = int(total)
+                    data[ageKey][ageValue][year]["cause"] = int(cause)
+            else:
+                data[ageKey] = {}
+                data[ageKey][ageValue] = {}
+                data[ageKey][ageValue][year] = {}
+                data[ageKey][ageValue][year]["total"] = int(total)
+                data[ageKey][ageValue][year]["cause"] = int(cause)
+
+        jsonData = []
+        for ageKey in data.keys():
+            for ageValue in data[ageKey].keys():
+                for year in data[ageKey][ageValue].keys():
+                    jsonData.append({
+                        "ageKey": ageKey,
+                        "ageValue": ageValue,
+                        "year": year,
+                        "total": data[ageKey][ageValue][year]["total"],
+                        "cause": data[ageKey][ageValue][year]["total"]
+                        })
+
+        return jsonData
+
+
+    except: 
+        print "ERROR!!!"
+        conn.close()
+        raise
+
+def pullAgeData():
     conn = sqlite3.connect(MORTALITYDB)
     cur = conn.cursor()
 
@@ -123,7 +179,8 @@ def pullAverageAge():
 def ageData ():
     print list(request.query)
     print ("Getting age data")
-    return pullAverageAge()
+    pullCauseByAge()
+    # return pullAgeData()
 # URI for getting data
 # pass a gender argument as:
 #    data?gender=M  
