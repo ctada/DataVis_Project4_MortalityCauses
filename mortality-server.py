@@ -112,7 +112,7 @@ def pullCauseByAge():
                         "ageValue": ageValue,
                         "year": year,
                         "total": data[ageKey][ageValue][year]["total"],
-                        "cause": data[ageKey][ageValue][year]["total"]
+                        "cause": data[ageKey][ageValue][year]["cause"]
                         })
 
         return jsonData
@@ -123,7 +123,7 @@ def pullCauseByAge():
         conn.close()
         raise
 
-def pullAgeData():
+def pullAverageAgeByCause():
     conn = sqlite3.connect(MORTALITYDB)
     cur = conn.cursor()
 
@@ -133,15 +133,21 @@ def pullAgeData():
                         FROM mortality
                         WHERE Age_Value != '999'
                         GROUP BY year, Cause_Recode_39, Age_Key""")
+
+        jsonData = []
+
         data = [{"year":int(year),
                  "cause":int(cause),
                  "ageKey":ageKey,
                  "avgAge":avgAge,
                  "numResp": numResp} for (year, cause, ageKey, avgAge, numResp) in  cur.fetchall()]
+
         grouped_data = group_by(data,"cause")
         for cause in grouped_data:
             grouped_data[cause]= group_by(grouped_data[cause],"year")
-        for cause in grouped_data:
+            causeJson = {}
+            causeJson["cause"] = cause
+            #Calculate average age for each cause, year combination
             for year in grouped_data[cause]:
                 totalResp = 0
                 for i, row in enumerate(grouped_data[cause][year]):
@@ -160,7 +166,8 @@ def pullAgeData():
                     elif row["ageKey"] == u'6':
                         grouped_data[cause][year][i]["ageInYears"] = row["avgAge"]/525600
                         totalResp += row["numResp"]
-                for i, row in enumerate(grouped_data[cause][year]):
+                
+                for row in grouped_data[cause][year]:
                     if cause in avgAgeData:
                         if year in avgAgeData[cause]:
                             avgAgeData[cause][year] += row["avgAge"] * row["numResp"]/totalResp
@@ -169,7 +176,10 @@ def pullAgeData():
                     else:
                         avgAgeData[cause] = {}
                         avgAgeData[cause][year] = row["avgAge"] * row["numResp"]/totalResp
-        return avgAgeData
+                causeJson[year] =  avgAgeData[cause][year]       
+            jsonData.append(causeJson)
+
+        return jsonData
     except:
         print "ERROR!!!"
         conn.close()
@@ -179,7 +189,10 @@ def pullAgeData():
 def ageData ():
     print list(request.query)
     print ("Getting age data")
-    pullCauseByAge()
+    topCause = pullCauseByAge()
+    avgAge = pullAverageAgeByCause()
+    return {"TopCauseByAge": topCause,
+        "AverageAgeForCause": avgAge}
     # return pullAgeData()
 # URI for getting data
 # pass a gender argument as:
