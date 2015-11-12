@@ -10,7 +10,10 @@
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.6/d3.min.js" charset="utf-8"></script>
 
-    <style>
+    <style type = 'text/css'>
+    body { font-family: 'Helvetica Neue', Helvetica; font-weight: 300; padding: 20px;}
+    th { text-align: left; }
+    th, td { padding: 0 1em 0.5ex 0;}
     </style>
 
   </head>
@@ -19,8 +22,8 @@
 
 
     <div>
-      <svg id="viz" height="500" width="800" style="border: 1px solid grey;">
-      </svg>
+      <!--<svg id="viz" height="500" width="800" style="border: 1px solid grey;">
+      </svg>-->
     </div>
 
     <script>
@@ -41,6 +44,7 @@ window.addEventListener("load",run);
 
 
 function run () {
+    /*
     var svg = d3.select("#viz");
     svg.append("text")
 	.attr("id","loading")
@@ -49,9 +53,16 @@ function run () {
 	.attr("dy","0.35em")
 	.style("text-anchor","middle")
 	.text("loading data...");
+    */
+    d3.select("body")
+        .append("text")
+        .text("loading data")
+        .attr("id", "msg");
 
     getData("",function(data) {
-      createView(data) });
+      //createView(data) });
+        d3.select("#msg").remove();
+        createTable(data); });
 }
 
 
@@ -80,6 +91,61 @@ function getTotal (data,cause,year) {
  * of the data
  *
  */
+ function createTable (data) {
+// Put average age of death data into table by year, cause of death
+
+    var causes = Object.keys(data);
+    //causes.sort(function(a,b) { return d3.descending(getTotal(data,a,"2013"), getTotal(data,b,"2013")); })
+
+    var svg = d3.select("#viz");
+    var title = d3.select("body").append("h1").text("Average Age of Death by Cause and Year")
+
+    //from http://bl.ocks.org/d3noob/473f0cf66196a008cf99
+    // column definitions
+    var table = d3.select('body').append('table'),
+        thead = table.append("thead"),
+        tbody = table.append("tbody");
+
+    years = ["2003", "2008", "2013"];
+
+    // append the header row
+
+    thead.append("tr")
+        .selectAll("th")
+        .data(["Year"].concat(causes)) //add "year" column to front
+        .enter()
+        .append("th")
+        .text(function(d) { if (d==="Year"){return d;}else{return CAUSE[d];} });
+
+    // create a row for each year in the data
+    var rows = tbody.selectAll("tr")
+        .data(years)
+        .enter()
+        .append("tr")
+       
+    // label each row with the year
+    var cells = rows.selectAll("td")
+        .data(function(yr) {
+            return ["Year"].concat(causes).map(function(cs) {
+                if (cs ==="Year"){
+                    return{column: cs, value: yr};
+                }
+                else{
+                    return {column: cs, value: data[cs][yr]};
+                }
+                
+            });
+        })
+        .enter()
+        .append("td")
+        .attr("style", "font-family: Courier") // sets the font style
+            //.html(function(d) { return d.value; });
+            .text(function(d) { return d.value; });
+    
+    console.log("made it to end");
+    
+}
+
 
 function createView (data) {
     
