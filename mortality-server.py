@@ -67,6 +67,15 @@ def pullData (gender):
         conn.close()
         raise
 
+# 
+# age in years
+#   2008: topcause
+#   2003: topcause
+#   2013: topcause
+#
+#
+
+
 def pullCauseByAge():
     conn = sqlite3.connect(MORTALITYDB)
     cur = conn.cursor()
@@ -97,14 +106,47 @@ def pullCauseByAge():
         
         
         jsonData = []
-        #Create a dictionary of age key, age vaule -> top cause, top value
+        data = []
+        
         for (ageKey, ageValue, year, cause, total,) in  cur.fetchall():
-            jsonData.append({"ageKey": ageKey,
-                "ageValue": ageValue,
+            ageinyears = 0
+            if ageKey == u'1':
+                ageInYears = float(ageValue)
+            elif ageKey == u'2':
+                ageInYears = float(ageValue)/12
+            elif ageKey == u'4':
+                ageInYears = float(ageValue)/365.25
+            elif ageKey == u'5':
+                ageInYears = float(ageValue)/8670
+            elif ageKey == u'6':
+                ageInYears = float(ageValue)/525600
+   
+            data.append({"ageInYears": ageInYears,
                 "year": year,
-                "cause": cause,
-                "deathCount": total})
-        return jsonData
+                "cause": int(cause),
+                "deathCount": int(total)})
+
+        groupedData = group_by(data, "ageInYears")
+        for age in groupedData.keys():
+            
+            ageJson = {"ageInYears": age,
+                "2003": "DNE",
+                "2008": "DNE",
+                "2013": "DNE"}
+
+            for row in groupedData[age]:
+                ageJson[row["year"]] = row["cause"]                
+
+            jsonData.append(ageJson)
+            print ageJson
+        #Create a dictionary of age key, age vaule -> top cause, top value
+        # for (ageKey, ageValue, year, cause, total,) in  cur.fetchall():
+        #     jsonData.append({"ageKey": ageKey,
+        #         "ageValue": ageValue,
+        #         "year": year,
+        #         "cause": cause,
+        #         "deathCount": total})
+        return sorted(jsonData, key= lambda ageJson: ageJson["ageInYears"])
 
     except: 
         print "ERROR!!!"
@@ -137,8 +179,8 @@ def pullAverageAgeByCause():
                             mortality.Age_Key """)
 
 
-        data = [{"cause": cause,
-            "year": year,
+        data = [{"cause": int(cause),
+            "year": int(year),
             "ageKey": ageKey,
             "avgAge": avgAge,
             "deathCount": deathCount,
@@ -160,13 +202,13 @@ def pullAverageAgeByCause():
                     ageInYears = row["avgAge"]/8670
                 elif row["ageKey"] == u'6':
                     ageInYears = row["avgAge"]/525600
+
                 if row["year"] in causeJson:
                     causeJson[row["year"]] += (row["deathCount"]/float(row["groupDeathCount"]))*ageInYears
                 else:
                     causeJson[row["year"]] = (row["deathCount"]/float(row["groupDeathCount"]))*ageInYears
             jsonData.append(causeJson)
-        print(jsonData)
-        return jsonData
+        return sorted(jsonData, key = lambda causeJson: causeJson["cause"])
             
     except:
         print "ERROR!!!"
