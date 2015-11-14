@@ -165,7 +165,6 @@ def pullAverageAgeByCause():
                 else:
                     causeJson[row["year"]] = (row["deathCount"]/float(row["groupDeathCount"]))*ageInYears
             jsonData.append(causeJson)
-        print(jsonData)
         return jsonData
             
     except:
