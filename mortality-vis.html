@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html>
+  
+  <head>
+    
+    <meta charset="utf-8">
+    <title>Mortality Demo</title>
+
+    <!-- load D3 library -->
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.6/d3.min.js" charset="utf-8"></script>
+
+    <style>
+    </style>
+
+  </head>
+  
+  <body>
+
+
+    <div>
+      <svg id="mannerViz" height="500" width="800" style="border: 1px solid grey;">
+      </svg>
+      <svg id="raceViz" height="500" width="800" style="border: 1px solid grey;">
+      </svg>
+    </div>
+
+    <script>
+
+
+/*
+ * Demo: Mortality 2008/2013
+ * 
+ */
+
+
+/*
+ * Call run when the page finishes loading
+ *
+ */
+      
+window.addEventListener("load",run);
+
+
+function run () {
+    var svg = d3.select("#mannerViz");
+    svg.append("text")
+    .attr("id","loading")
+    .attr("x",+svg.attr("width")/2)
+    .attr("y",+svg.attr("height")/2)
+    .attr("dy","0.35em")
+    .style("text-anchor","middle")
+    .text("loading data...");
+
+    createMannerView(getTemporaryData());
+    createRaceView(getTemporaryData());
+}
+
+
+/*
+ * Function for getting the total from the
+ * data for a given manner and a given year
+ * (returns 0 if there's no such entry in
+ * the data)
+ * 
+ */
+function getCountByColumn(data, column){
+  columnData = {total: 0};
+  data.forEach(function(row) {
+    if (column in row) {
+      if (row[column] in columnData){
+        columnData[row[column]] += row.count;
+      } else {
+        columnData[row[column]] = row.count;
+      }
+      columnData.total += row.count
+    }
+  })
+  return columnData;
+}
+
+function getColumnCountByYear(data, column){
+  columnData = {};
+  data.forEach(function(row){
+    if (column in row) {
+      if (row.year in columnData) {
+        columnData[row.year].push({
+          year: row.year,
+          column: column,
+          columnValue: row[column],
+          count: row.count});
+      } else {
+        columnData[row.year] = [];
+        columnData[row.year].push({
+          year: row.year,
+          column: column,
+          columnValue: row[column],
+          count: row.count});
+      }
+    }
+  })
+  return columnData;
+}
+
+function cumulate(data){
+  data.forEach(function(row, i){
+    if (i === 0){
+      row.cumulative = 0;
+    } else {
+      row.cumulative = data[i-1].cumulative + data[i-1].count;
+    }
+  });
+  return data;
+}
+
+/* 
+ * Create a simple visual representation
+ * of the data
+ *
+ */
+
+function createMannerView (data) {
+    
+    // first, sort the data by 2013 numbers
+
+    var groupedByManner = getColumnCountByYear(data,"manner");
+
+    var data2003 = cumulate(groupedByManner["2003"]);
+    var data2008 = cumulate(groupedByManner["2008"]);
+    var data2013 = cumulate(groupedByManner["2013"]);
+
+    var svg = d3.select("#mannerViz");
+
+    var max2003 = data2003[data2003.length-1].cumulative + data2003[data2003.length-1].count;
+    var max2008 = data2008[data2008.length-1].cumulative + data2008[data2008.length-1].count;
+    var max2013 = data2013[data2013.length-1].cumulative + data2013[data2013.length-1].count;
+    
+    var y = d3.scale.linear()
+    .domain([0,Math.max(max2003,max2008,max2013)])
+    .range([+svg.attr("height")-50,50]);
+
+    var height = d3.scale.linear()
+    .domain([0,Math.max(max2003,max2008,max2013)])
+    .range([0,+svg.attr("height")-100]);
+
+
+    var yearList = [2003, 2008, 2013];
+
+    const colorsRng = [
+    "#6bcae2", "#51a5ba", "#41924b", "#afeaaa",
+    "#87e293", "#fe8402", "#ff9933", "#ffd480",
+    ];
+
+    // note: the width attribute holds strings
+    var xs = {"2003": +svg.attr("width")*1/4,
+      "2008": +svg.attr("width")*1/2,
+      "2013": +svg.attr("width")*3/4};
+    
+    var barWidth = +svg.attr("width")*3/16;
+
+    svg.append("text")
+      .attr("class","mannerlabel")
+      .attr("x",+svg.attr("width")/2)
+      .attr("y",20)
+      .attr("dy","0.3em")
+      .style("text-anchor","middle")
+      .text("Manner of Death By Year");
+
+    var years = svg.selectAll("g")
+    .data(yearList)
+    .enter()
+    .append("g")
+    .attr("class", function(d) {return d;});
+
+    years.append("text")
+      .attr("class","yearlabel")
+      .attr("x",function(d) {
+        return xs[d];
+      })
+      .attr("y",+svg.attr("height") - 20)
+      .attr("dy","0.3em")
+      .style("text-anchor","middle")
+      .text(function(d) {return d;});
+
+
+    var mannerData = years
+      .data([data2003, data2008, data2013]);
+
+    var mannerBars = mannerData.selectAll("g")
+      .data(function (d,i) {return d})
+      .enter();
+
+    mannerBars
+      .append("rect")
+      .attr("x", function (d) {
+        return xs[d.year] -barWidth/2;
+      })
+      .attr("y", function(d){
+        return y(d.cumulative) - height(d.count);
+      })
+      .attr("width", barWidth)
+      .attr("height", function(d) {
+        return height(d.count);
+      })
+      .attr("fill", function(d){return colorsRng[d.columnValue - 1];})
+      .attr("class", "mannerbar");
+}
+
+function createRaceView (data) {
+    
+    // first, sort the data by 2013 numbers
+    var groupedByRace = getCountByColumn(data,"race");
+
+    console.log(groupedByRace);
+    var totalcount = groupedByRace["total"];
+    delete groupedByRace["total"]
+
+    raceData = cumulate(Object.keys(groupedByRace).map(function(raceKey) {
+      return {race: raceKey, count: groupedByRace[raceKey]};
+    }));
+
+    console.log(raceData);
+
+    var svg = d3.select("#raceViz");
+    
+    var angle = d3.scale.linear()
+    .domain([0,totalcount])
+    .range([0,2*Math.PI]);
+
+    const colorsRng = [
+    "#6bcae2", "#51a5ba", "#41924b", "#afeaaa",
+    "#87e293", "#fe8402", "#ff9933", "#ffd480",
+    ];
+
+    radius = 200;
+    var cx = +svg.attr("width")/2;
+    var cy = svg.attr("height")/2;
+
+    var raceArc = d3.svg.arc()
+        .innerRadius(radius/2)
+        .outerRadius(radius);
+
+    svg.append("text")
+      .attr("class","racelabel")
+      .attr("x",+svg.attr("width")/2)
+      .attr("y",20)
+      .attr("dy","0.3em")
+      .style("text-anchor","middle")
+      .text("Race");
+
+    var races = svg.selectAll("g")
+    .data(raceData)
+    .enter()
+    .append("g")
+    .attr("class", "raceArc");
+
+    races.append("path")
+      .each(function(d,i) {
+        d.startAngle = angle(d.cumulative);
+        d.endAngle = angle(d.cumulative + d.count);})
+      .attr("d", raceArc)
+      .attr("transform",  "translate(" + cx + "," + cy + ")")
+      .attr("class", "raceslice")
+      .attr("fill", function(d,i){return colorsRng[i];});
+}
+    
+function getTemporaryData () {
+  data = [{year: 2003, 
+    race: "01", 
+    education: "test",
+    place: "test",
+    activity: "test",
+    manner: 1, 
+    count: 10},
+  {year: 2008, 
+    race: "02", 
+    education: "test",
+    place: "test",
+    activity: "test",
+    manner: 1, 
+    count: 15},
+  {year: 2013, 
+    race: "03", 
+    education: "test",
+    place: "test",
+    activity: "test",
+    manner: 1, 
+    count: 25},
+  {year: 2003, 
+    race: "01", 
+    education: "test",
+    place: "test",
+    activity: "test",
+    manner: 2, 
+    count: 25},
+  {year: 2008, 
+    race: "01", 
+    education: "test",
+    place: "test",
+    activity: "test",
+    manner: 2, 
+    count: 45},
+  {year: 2013, 
+    race: "02", 
+    education: "test",
+    place: "test",
+    activity: "test",
+    manner: 2, 
+    count: 15}];
+
+  return data;
+}
+
+
+
+/*
+ * Pulls the data for a given gender
+ * (can be empty)
+ * 
+ */
+
+function getData (gender,f) {
+
+    d3.json("text")
+    .header("Content-Type", "application/x-www-form-urlencoded")
+    .get(
+         function(error,data) {
+         if (error) {
+             d3.select("#loading").remove();
+             console.log(error);
+         } else {
+             d3.select("#loading").remove();
+             console.log(" data =", data);
+             f(data);
+         }
+         });
+}
+      
+    </script>
+    
+  </body>
+  
+</html>
