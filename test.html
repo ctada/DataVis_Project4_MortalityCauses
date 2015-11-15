@@ -60,6 +60,7 @@ function run () {
         .attr("id", "msg");
 
     getData("",function(data) {
+        // gets {"TopCauseByAge": topCause, "AverageAgeForCause": avgAge}
       //createView(data) });
         d3.select("#msg").remove();
         createTable(data); });
@@ -93,11 +94,11 @@ function getTotal (data,cause,year) {
  */
  function createTable (data) {
 // Put average age of death data into table by year, cause of death
-
-    var causes = Object.keys(data);
-    //causes.sort(function(a,b) { return d3.descending(getTotal(data,a,"2013"), getTotal(data,b,"2013")); })
-
-    var svg = d3.select("#viz");
+// Data is {"TopCauseByAge": topCause, "AverageAgeForCause": avgAge}
+    
+    var aaData = data["AverageAgeForCause"];
+    var tcData = data["TopCauseByAge"];
+    
     var title = d3.select("body").append("h1").text("Average Age of Death by Cause and Year")
 
     //from http://bl.ocks.org/d3noob/473f0cf66196a008cf99
@@ -109,29 +110,28 @@ function getTotal (data,cause,year) {
     years = ["2003", "2008", "2013"];
 
     // append the header row
-
     thead.append("tr")
         .selectAll("th")
-        .data(["Year"].concat(causes)) //add "year" column to front
+        .data(["Cause of Death"].concat(years)) //add "year" column to front
         .enter()
         .append("th")
-        .text(function(d) { if (d==="Year"){return d;}else{return CAUSE[d];} });
+        .text(function(d) {return d;});
 
-    // create a row for each year in the data
+    // create a row for each cause in the data
     var rows = tbody.selectAll("tr")
-        .data(years)
+        .data(d3.range(0,aaData.length))
         .enter()
         .append("tr")
        
     // label each row with the year
     var cells = rows.selectAll("td")
-        .data(function(yr) {
-            return ["Year"].concat(causes).map(function(cs) {
-                if (cs ==="Year"){
-                    return{column: cs, value: yr};
+        .data(function(i) {
+            return ["Cause of Death"].concat(years).map(function(yr_col) { 
+                if (yr_col ==="Cause of Death"){
+                    return{column: yr_col, value: CAUSE[aaData[i]["cause"]]};
                 }
                 else{
-                    return {column: cs, value: data[cs][yr]};
+                    return {column: yr_col, value: aaData[i][yr_col]};
                 }
                 
             });
@@ -141,11 +141,50 @@ function getTotal (data,cause,year) {
         .attr("style", "font-family: Courier") // sets the font style
             //.html(function(d) { return d.value; });
             .text(function(d) { return d.value; });
-    
-    console.log("made it to end");
-    
-}
 
+    var title2 = d3.select("body").append("h1").text("Top Cause of Death by Age and Year")
+
+    //from http://bl.ocks.org/d3noob/473f0cf66196a008cf99
+    // column definitions
+    var table = d3.select('body').append('table'),
+        thead = table.append("thead"),
+        tbody = table.append("tbody");
+
+    console.log("tcData", tcData);
+
+    // append the header row
+    thead.append("tr")
+        .selectAll("th")
+        .data(["Age"].concat(years)) //add "Age" column to front
+        .enter()
+        .append("th")
+        .text(function(d) {return d;});
+
+    // create a row for each cause in the data
+    var rows = tbody.selectAll("tr")
+        .data(d3.range(0,tcData.length))
+        .enter()
+        .append("tr")
+       
+    // label each row with the year
+    var cells = rows.selectAll("td")
+        .data(function(i) {
+            return ["Age"].concat(years).map(function(yr_col) { 
+                if (yr_col ==="Age"){
+                    return{column: yr_col, value: tcData[i]["ageInYears"]};
+                }
+                else{
+                    return {column: yr_col, value: CAUSE[tcData[i][yr_col]]};
+                }
+                
+            });
+        })
+        .enter()
+        .append("td")
+        .attr("style", "font-family: Courier") // sets the font style
+            //.html(function(d) { return d.value; });
+            .text(function(d) { return d.value; });
+}
 
 function createView (data) {
     
