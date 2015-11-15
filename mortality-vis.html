@@ -11,6 +11,29 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.6/d3.min.js" charset="utf-8"></script>
 
     <style>
+      text {
+          font-family: sans-serif;
+       }
+      .charttitle {
+          font-size: 25px;
+      }
+      .legendtitle{
+          font-size: 20px;
+      }
+      .legendlabel{
+          font-size: 10px;
+      }
+      .userslice { 
+           stroke: white;
+           stroke-width: 2px;
+           fill: #3366FF;
+      }  
+
+      .backgroundcircle { 
+           stroke: white;
+           stroke-width: 2px;
+           fill: #999999;
+      }
     </style>
 
   </head>
@@ -22,6 +45,8 @@
       <svg id="mannerViz" height="500" width="800" style="border: 1px solid grey;">
       </svg>
       <svg id="raceViz" height="500" width="800" style="border: 1px solid grey;">
+      </svg>
+      <svg id="educationViz" height="500" width="800" style="border: 1px solid grey;">
       </svg>
     </div>
 
@@ -41,19 +66,60 @@
       
 window.addEventListener("load",run);
 
+var numberToLabel = {
+  manner: {
+    "1": "Accident",
+    "2": "Suicide",
+    "3": "Homicide",
+    "4": "Pending Investigation",
+    "5": "Could Not Determine",
+    "6": "Self-Inflicted",
+    "7": "Natural",
+    "Blank": "Not Specified"
+  },
+  race: {
+    "01": "White",
+    "02": "Black",
+    "O3": "American Indian",
+    "04": "Chinese",
+    "05": "Japanese",
+    "06": "Hawaiian",
+    "07": "Filipino",
+    "18": "Asian Indian",
+    "28": "Korean",
+    "38": "Samoan",
+    "48": "Vietnamese",
+    "58": "Guamanian",
+    "68": "Other Asian or Pacific Islander",
+    "78": "Combined other Asian or Pacific Islander"
+  },
+  education: {
+    "00": "None",
+    "01": "One Year of Elementary",
+    "02": "Two Years of Elementary",
+    "03": "Three Years of Elementary",
+    "04": "Four Years of Elementary",
+    "05": "Five Years of Elementary",
+    "06": "Six Years of Elementary",
+    "07": "Seven Years of Elementary",
+    "08": "Eight Years of Elementary",
+    "09": "One Year of High School",
+    "10": "Two Years of High School",
+    "11": "Three Years of High School",
+    "12": "Four Years of High School",
+    "13": "One Year of College",
+    "14": "Two Years of College",
+    "15": "Three Years of College",
+    "16": "Four Years of College",
+    "17": "Five or More Years of College",
+    "99": "Not Stated"
+  }
+};
 
 function run () {
-    var svg = d3.select("#mannerViz");
-    svg.append("text")
-    .attr("id","loading")
-    .attr("x",+svg.attr("width")/2)
-    .attr("y",+svg.attr("height")/2)
-    .attr("dy","0.35em")
-    .style("text-anchor","middle")
-    .text("loading data...");
-
     createMannerView(getTemporaryData());
     createRaceView(getTemporaryData());
+    createEducationView(getTemporaryData());
 }
 
 
@@ -121,188 +187,431 @@ function cumulate(data){
 
 function createMannerView (data) {
     
-    // first, sort the data by 2013 numbers
+  // first, sort the data by 2013 numbers
 
-    var groupedByManner = getColumnCountByYear(data,"manner");
+  var groupedByManner = getColumnCountByYear(data,"manner");
 
-    var data2003 = cumulate(groupedByManner["2003"]);
-    var data2008 = cumulate(groupedByManner["2008"]);
-    var data2013 = cumulate(groupedByManner["2013"]);
+  var data2003 = cumulate(groupedByManner["2003"]);
+  var data2008 = cumulate(groupedByManner["2008"]);
+  var data2013 = cumulate(groupedByManner["2013"]);
 
-    var svg = d3.select("#mannerViz");
+  var svg = d3.select("#mannerViz");
 
-    var max2003 = data2003[data2003.length-1].cumulative + data2003[data2003.length-1].count;
-    var max2008 = data2008[data2008.length-1].cumulative + data2008[data2008.length-1].count;
-    var max2013 = data2013[data2013.length-1].cumulative + data2013[data2013.length-1].count;
-    
-    var y = d3.scale.linear()
-    .domain([0,Math.max(max2003,max2008,max2013)])
-    .range([+svg.attr("height")-50,50]);
+  var max2003 = data2003[data2003.length-1].cumulative + data2003[data2003.length-1].count;
+  var max2008 = data2008[data2008.length-1].cumulative + data2008[data2008.length-1].count;
+  var max2013 = data2013[data2013.length-1].cumulative + data2013[data2013.length-1].count;
+  
+  var y = d3.scale.linear()
+  .domain([0,Math.max(max2003,max2008,max2013)])
+  .range([+svg.attr("height")-50,50]);
 
-    var height = d3.scale.linear()
-    .domain([0,Math.max(max2003,max2008,max2013)])
-    .range([0,+svg.attr("height")-100]);
+  var height = d3.scale.linear()
+  .domain([0,Math.max(max2003,max2008,max2013)])
+  .range([0,+svg.attr("height")-100]);
 
 
-    var yearList = [2003, 2008, 2013];
+  var yearList = [2003, 2008, 2013];
 
-    const colorsRng = [
-    "#6bcae2", "#51a5ba", "#41924b", "#afeaaa",
-    "#87e293", "#fe8402", "#ff9933", "#ffd480",
-    ];
+  const colorsRng = [
+  "#6bcae2", "#51a5ba", "#41924b", "#afeaaa",
+  "#87e293", "#fe8402", "#ff9933", "#ffd480",
+  ];
 
-    // note: the width attribute holds strings
-    var xs = {"2003": +svg.attr("width")*1/4,
-      "2008": +svg.attr("width")*1/2,
-      "2013": +svg.attr("width")*3/4};
-    
-    var barWidth = +svg.attr("width")*3/16;
+  var mannerColors = {"Accident": colorsRng[0],
+    "Suicide": colorsRng[1],
+    "Homicide": colorsRng[2],
+    "Pending Investigation": colorsRng[3],
+    "Could Not Determine": colorsRng[4],
+    "Self-Inflicted": colorsRng[5],
+    "Natural": colorsRng[6],
+    "Not Specified": colorsRng[7]};
 
-    svg.append("text")
-      .attr("class","mannerlabel")
-      .attr("x",+svg.attr("width")/2)
-      .attr("y",20)
-      .attr("dy","0.3em")
-      .style("text-anchor","middle")
-      .text("Manner of Death By Year");
+  // note: the width attribute holds strings
+  var xs = {"2003": +svg.attr("width")*1/5,
+    "2008": +svg.attr("width")*2/5,
+    "2013": +svg.attr("width")*3/5};
+  
+  var barWidth = +svg.attr("width")*3/20;
 
-    var years = svg.selectAll("g")
-    .data(yearList)
+  svg.append("text")
+    .attr("class","charttitle")
+    .attr("x",+svg.attr("width")/2)
+    .attr("y",20)
+    .attr("dy","0.3em")
+    .style("text-anchor","middle")
+    .text("Manner of Death By Year");
+
+  var years = svg.selectAll("g")
+  .data(yearList)
+  .enter()
+  .append("g")
+  .attr("class", function(d) {return d;});
+
+  years.append("text")
+    .attr("class","yearlabel")
+    .attr("x",function(d) {
+      return xs[d];
+    })
+    .attr("y",+svg.attr("height") - 20)
+    .attr("dy","0.3em")
+    .style("text-anchor","middle")
+    .text(function(d) {return d;});
+
+
+  var mannerData = years
+    .data([data2003, data2008, data2013]);
+
+  var mannerBars = mannerData.selectAll("g")
+    .data(function (d,i) {return d})
+    .enter();
+
+  mannerBars
+    .append("rect")
+    .attr("x", function (d) {
+      return xs[d.year] -barWidth/2;
+    })
+    .attr("y", function(d){
+      return y(d.cumulative) - height(d.count);
+    })
+    .attr("width", barWidth)
+    .attr("height", function(d) {
+      return height(d.count);
+    })
+    .attr("fill", function(d){return colorsRng[d.columnValue - 1];})
+    .attr("class", "mannerbar")
+    .on("mouseover",function(d,i) { 
+    this.style.fill = "#772310"; 
+    })
+    .on("mouseout",function(d, i) { 
+        this.style.fill = colorsRng[i]; 
+    });
+  
+  var legend = svg.append("g")
+    .attr("class", "legend");
+
+  legend.append("text")
+    .attr("class","legendtitle")
+    .attr("x", +svg.attr("width")*4/5)
+    .attr("y", 50)
+    .attr("dy","0.3em")
+    .style("text-anchor","middle")
+    .text("Legend");
+
+  legendEntries = legend.selectAll("g")
+    .data(Object.keys(mannerColors))
     .enter()
     .append("g")
-    .attr("class", function(d) {return d;});
+    .attr("class", "legendentry");
 
-    years.append("text")
-      .attr("class","yearlabel")
-      .attr("x",function(d) {
-        return xs[d];
-      })
-      .attr("y",+svg.attr("height") - 20)
-      .attr("dy","0.3em")
-      .style("text-anchor","middle")
-      .text(function(d) {return d;});
-
-
-    var mannerData = years
-      .data([data2003, data2008, data2013]);
-
-    var mannerBars = mannerData.selectAll("g")
-      .data(function (d,i) {return d})
-      .enter();
-
-    mannerBars
-      .append("rect")
-      .attr("x", function (d) {
-        return xs[d.year] -barWidth/2;
-      })
-      .attr("y", function(d){
-        return y(d.cumulative) - height(d.count);
-      })
-      .attr("width", barWidth)
-      .attr("height", function(d) {
-        return height(d.count);
-      })
-      .attr("fill", function(d){return colorsRng[d.columnValue - 1];})
-      .attr("class", "mannerbar");
+  legendEntries.append("rect")
+    .attr("class", "legendbox")
+    .attr("x", +svg.attr("width")*4/5 - 30)
+    .attr("y", function (d,i) {
+      return 65 + 20*i;})
+    .attr("width", 16)
+    .attr("height", 16)
+    .attr("fill", function (d,i) {
+      return mannerColors[d];
+    });
+  legendEntries.append("text")
+    .attr("class","legendlabel")
+    .attr("x", +svg.attr("width")*4/5 - 10)
+    .attr("y", function (d,i) {
+      return 65 + 20*i + 8;})
+    .attr("dy","0.3em")
+    .style("text-anchor","start")
+    .text(function(d,i){
+      return d});
 }
 
 function createRaceView (data) {
     
-    // first, sort the data by 2013 numbers
-    var groupedByRace = getCountByColumn(data,"race");
+  // first, sort the data by 2013 numbers
+  var groupedByRace = getCountByColumn(data,"race");
 
-    console.log(groupedByRace);
-    var totalcount = groupedByRace["total"];
-    delete groupedByRace["total"]
+  var totalcount = groupedByRace["total"];
+  delete groupedByRace["total"]
 
-    raceData = cumulate(Object.keys(groupedByRace).map(function(raceKey) {
-      return {race: raceKey, count: groupedByRace[raceKey]};
-    }));
+  raceData = cumulate(Object.keys(groupedByRace).map(function(raceKey) {
+    return {race: raceKey, count: groupedByRace[raceKey]};
+  }));
 
-    console.log(raceData);
+  var svg = d3.select("#raceViz");
+  
+  var angle = d3.scale.linear()
+  .domain([0,totalcount])
+  .range([0,2*Math.PI]);
 
-    var svg = d3.select("#raceViz");
-    
-    var angle = d3.scale.linear()
-    .domain([0,totalcount])
-    .range([0,2*Math.PI]);
+  const colorsRng = [
+  "#6bcae2", "#51a5ba", "#41924b", "#afeaaa", "#87e293", "#fe8402", "#ff9933", "#ffd480", "#ffd480","#ffd480", "#ffd480", "#ffd480", "#ffd480", "#ffd480"];
 
-    const colorsRng = [
-    "#6bcae2", "#51a5ba", "#41924b", "#afeaaa",
-    "#87e293", "#fe8402", "#ff9933", "#ffd480",
-    ];
+  raceColors = {
+    "White": colorsRng[0],
+    "Black": colorsRng[1],
+    "American Indian": colorsRng[2],
+    "Chinese": colorsRng[3],
+    "Japanese": colorsRng[4],
+    "Hawaiian": colorsRng[5],
+    "Filipino": colorsRng[6],
+    "Asian Indian": colorsRng[7],
+    "Korean": colorsRng[8],
+    "Samoan": colorsRng[9],
+    "Vietnamese": colorsRng[10],
+    "Guamanian": colorsRng[11],
+    "Other Asian or Pacific Islander": colorsRng[12],
+    "Combined Asian or Pacific Islander": colorsRng[13]
+  };
 
-    radius = 200;
-    var cx = +svg.attr("width")/2;
-    var cy = svg.attr("height")/2;
+  var radius = 200;
 
-    var raceArc = d3.svg.arc()
-        .innerRadius(radius/2)
-        .outerRadius(radius);
+  if (+svg.attr("width")*4/5 > svg.attr("height")*4/5) {
+    radius = +svg.attr("width")*3/15;
+  } else {
+    radius = +svg.attr("height")*3/15;
+  }
 
-    svg.append("text")
-      .attr("class","racelabel")
-      .attr("x",+svg.attr("width")/2)
-      .attr("y",20)
-      .attr("dy","0.3em")
-      .style("text-anchor","middle")
-      .text("Race");
+  var cx = +svg.attr("width")*4/10;
+  var cy = svg.attr("height")/2;
 
-    var races = svg.selectAll("g")
-    .data(raceData)
+  var raceArc = d3.svg.arc()
+      .innerRadius(radius/2)
+      .outerRadius(radius);
+
+  svg.append("text")
+    .attr("class","charttitle")
+    .attr("x",+svg.attr("width")*4/10)
+    .attr("y",20)
+    .attr("dy","0.3em")
+    .style("text-anchor","middle")
+    .text("Race");
+
+  var races = svg.selectAll("g")
+  .data(raceData)
+  .enter()
+  .append("g")
+  .attr("class", "raceArc");
+
+  races.append("path")
+    .each(function(d,i) {
+      d.startAngle = angle(d.cumulative);
+      d.endAngle = angle(d.cumulative + d.count);})
+    .attr("d", raceArc)
+    .attr("transform",  "translate(" + cx + "," + cy + ")")
+    .attr("class", "raceslice")
+    .attr("fill", function(d,i){return colorsRng[i];})
+    .on("mouseover",function(d,i) { 
+      this.style.fill = "#772310"; 
+    })
+    .on("mouseout",function(d, i) { 
+        this.style.fill = colorsRng[i]; 
+    });
+
+  var legend = svg.append("g")
+    .attr("class", "legend");
+
+  legend.append("text")
+    .attr("class","legendtitle")
+    .attr("x", +svg.attr("width")*4/5)
+    .attr("y", 50)
+    .attr("dy","0.3em")
+    .style("text-anchor","middle")
+    .text("Legend");
+
+  legendEntries = legend.selectAll("g")
+    .data(Object.keys(raceColors))
     .enter()
     .append("g")
-    .attr("class", "raceArc");
+    .attr("class", "legendentry");
 
-    races.append("path")
-      .each(function(d,i) {
-        d.startAngle = angle(d.cumulative);
-        d.endAngle = angle(d.cumulative + d.count);})
-      .attr("d", raceArc)
-      .attr("transform",  "translate(" + cx + "," + cy + ")")
-      .attr("class", "raceslice")
-      .attr("fill", function(d,i){return colorsRng[i];});
+  legendEntries.append("rect")
+    .attr("class", "legendbox")
+    .attr("x", +svg.attr("width")*4/5 - 30)
+    .attr("y", function (d,i) {
+      return 65 + 20*i;})
+    .attr("width", 16)
+    .attr("height", 16)
+    .attr("fill", function (d,i) {
+      return raceColors[d];
+    });
+
+  legendEntries.append("text")
+    .attr("class","legendlabel")
+    .attr("x", +svg.attr("width")*4/5 - 10)
+    .attr("y", function (d,i) {
+      return 65 + 20*i + 8;})
+    .attr("dy","0.3em")
+    .style("text-anchor","start")
+    .text(function(d,i){
+      return d});
+}
+
+function createEducationView (data) {
+    
+  // first, sort the data by 2013 numbers
+  var groupedByEducation = getCountByColumn(data,"education");
+
+  var totalcount = groupedByEducation["total"];
+  delete groupedByEducation["total"]
+
+  educationData = cumulate(Object.keys(groupedByEducation).map(function(educationKey) {
+    return {education: educationKey, count: groupedByEducation[educationKey]};
+  }));
+
+  var svg = d3.select("#educationViz");
+  
+  var angle = d3.scale.linear()
+  .domain([0,totalcount])
+  .range([0,2*Math.PI]);
+
+  const colorsRng = [
+  "#6bcae2", "#51a5ba", "#41924b", "#afeaaa", "#87e293", "#fe8402", "#ff9933", "#ffd480", "#ffd480", "#ffd480", "#ffd480", "#ffd480", "#ffd480", "#ffd480", "#ffd480", "#ffd480", "#ffd480", "#ffd480", "#ffd480"
+  ];
+
+  var educationColors = {
+    "None": colorsRng[0],
+    "One Year of Elementary": colorsRng[1],
+    "Two Years of Elementary": colorsRng[2],
+    "Three Years of Elementary": colorsRng[3],
+    "Four Years of Elementary": colorsRng[4],
+    "Five Years of Elementary": colorsRng[5],
+    "Six Years of Elementary": colorsRng[6],
+    "Seven Years of Elementary": colorsRng[7],
+    "Eight Years of Elementary": colorsRng[8],
+    "One Year of High School": colorsRng[9],
+    "Two Years of High School": colorsRng[10],
+    "Three Years of High School": colorsRng[11],
+    "Four Years of High School": colorsRng[12],
+    "One Year of College": colorsRng[13],
+    "Two Years of College": colorsRng[14],
+    "Three Years of College": colorsRng[15],
+    "Four Years of College": colorsRng[16],
+    "Five or More Years of College": colorsRng[17],
+    "Not Stated": colorsRng[18]
+  };
+
+  
+  var radius = 200;
+
+  if (+svg.attr("width")*4/5 > svg.attr("height")*4/5) {
+    radius = +svg.attr("width")*3/15;
+  } else {
+    radius = +svg.attr("height")*3/15;
+  }
+
+  var cx = +svg.attr("width")*4/10;
+  var cy = svg.attr("height")/2;
+
+  var educationArc = d3.svg.arc()
+      .innerRadius(radius/2)
+      .outerRadius(radius);
+
+  svg.append("text")
+    .attr("class","charttitle")
+    .attr("x",+svg.attr("width")*4/10)
+    .attr("y",20)
+    .attr("dy","0.3em")
+    .style("text-anchor","middle")
+    .text("Education");
+
+  var educations = svg.selectAll("g")
+  .data(educationData)
+  .enter()
+  .append("g")
+  .attr("class", "educationArc");
+
+  educations.append("path")
+    .each(function(d,i) {
+      d.startAngle = angle(d.cumulative);
+      d.endAngle = angle(d.cumulative + d.count);})
+    .attr("d", educationArc)
+    .attr("transform",  "translate(" + cx + "," + cy + ")")
+    .attr("class", "raceslice")
+    .attr("fill", function(d,i){return colorsRng[i];})
+    .on("mouseover",function(d,i) { 
+    this.style.fill = "#772310"; 
+    })
+    .on("mouseout",function(d, i) { 
+        this.style.fill = colorsRng[i]; 
+    });
+
+  var legend = svg.append("g")
+    .attr("class", "legend");
+
+  legend.append("text")
+    .attr("class","legendtitle")
+    .attr("x", +svg.attr("width")*4/5)
+    .attr("y", 50)
+    .attr("dy","0.3em")
+    .style("text-anchor","middle")
+    .text("Legend");
+
+  legendEntries = legend.selectAll("g")
+    .data(Object.keys(educationColors))
+    .enter()
+    .append("g")
+    .attr("class", "legendentry");
+
+  legendEntries.append("rect")
+    .attr("class", "legendbox")
+    .attr("x", +svg.attr("width")*4/5 - 30)
+    .attr("y", function (d,i) {
+      return 65 + 20*i;})
+    .attr("width", 16)
+    .attr("height", 16)
+    .attr("fill", function (d,i) {
+      return educationColors[d];
+    });
+
+  legendEntries.append("text")
+    .attr("class","legendlabel")
+    .attr("x", +svg.attr("width")*4/5 - 10)
+    .attr("y", function (d,i) {
+      return 65 + 20*i + 8;})
+    .attr("dy","0.3em")
+    .style("text-anchor","start")
+    .text(function(d,i){
+      return d});
 }
     
 function getTemporaryData () {
   data = [{year: 2003, 
     race: "01", 
-    education: "test",
+    education: "10",
     place: "test",
     activity: "test",
     manner: 1, 
     count: 10},
   {year: 2008, 
     race: "02", 
-    education: "test",
+    education: "11",
     place: "test",
     activity: "test",
     manner: 1, 
     count: 15},
   {year: 2013, 
     race: "03", 
-    education: "test",
+    education: "12",
     place: "test",
     activity: "test",
     manner: 1, 
     count: 25},
   {year: 2003, 
     race: "01", 
-    education: "test",
+    education: "12",
     place: "test",
     activity: "test",
     manner: 2, 
     count: 25},
   {year: 2008, 
     race: "01", 
-    education: "test",
+    education: "10",
     place: "test",
     activity: "test",
     manner: 2, 
     count: 45},
   {year: 2013, 
     race: "02", 
-    education: "test",
+    education: "11",
     place: "test",
     activity: "test",
     manner: 2, 
