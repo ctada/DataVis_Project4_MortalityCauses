@@ -80,7 +80,7 @@ var numberToLabel = {
   race: {
     "01": "White",
     "02": "Black",
-    "O3": "American Indian",
+    "03": "American Indian",
     "04": "Chinese",
     "05": "Japanese",
     "06": "Hawaiian",
@@ -120,6 +120,9 @@ function run () {
     createMannerView(getTemporaryData());
     createRaceView(getTemporaryData());
     createEducationView(getTemporaryData());
+    updateMannerView(getUpdatedData());
+    updateRaceView(getUpdatedData());
+    updateEducationView(getUpdatedData());
 }
 
 
@@ -154,14 +157,16 @@ function getColumnCountByYear(data, column){
           year: row.year,
           column: column,
           columnValue: row[column],
-          count: row.count});
+          count: row.count, 
+          id: "mannerBar" + row.year + row[column]});
       } else {
         columnData[row.year] = [];
         columnData[row.year].push({
           year: row.year,
           column: column,
           columnValue: row[column],
-          count: row.count});
+          count: row.count,
+          id: "mannerBar" + row.year + row[column]});
       }
     }
   })
@@ -200,7 +205,7 @@ function createMannerView (data) {
   var max2003 = data2003[data2003.length-1].cumulative + data2003[data2003.length-1].count;
   var max2008 = data2008[data2008.length-1].cumulative + data2008[data2008.length-1].count;
   var max2013 = data2013[data2013.length-1].cumulative + data2013[data2013.length-1].count;
-  
+
   var y = d3.scale.linear()
   .domain([0,Math.max(max2003,max2008,max2013)])
   .range([+svg.attr("height")-50,50]);
@@ -212,19 +217,18 @@ function createMannerView (data) {
 
   var yearList = [2003, 2008, 2013];
 
-  const colorsRng = [
-  "#6bcae2", "#51a5ba", "#41924b", "#afeaaa",
-  "#87e293", "#fe8402", "#ff9933", "#ffd480",
-  ];
+  var colorScale = d3.scale.linear()
+    .domain([0,1])
+    .range(["#ccebff","#004c80"]);
 
-  var mannerColors = {"Accident": colorsRng[0],
-    "Suicide": colorsRng[1],
-    "Homicide": colorsRng[2],
-    "Pending Investigation": colorsRng[3],
-    "Could Not Determine": colorsRng[4],
-    "Self-Inflicted": colorsRng[5],
-    "Natural": colorsRng[6],
-    "Not Specified": colorsRng[7]};
+  var mannerColors = {"Accident": colorScale(0),
+    "Suicide": colorScale(1/7),
+    "Homicide": colorScale(2/7),
+    "Pending Investigation": colorScale(3/7),
+    "Could Not Determine": colorScale(4/7),
+    "Self-Inflicted": colorScale(5/7),
+    "Natural": colorScale(6/7),
+    "Not Specified": colorScale(1)};
 
   // note: the width attribute holds strings
   var xs = {"2003": +svg.attr("width")*1/5,
@@ -245,7 +249,7 @@ function createMannerView (data) {
   .data(yearList)
   .enter()
   .append("g")
-  .attr("class", function(d) {return d;});
+  .attr("class", function(d){return "year" + d;});
 
   years.append("text")
     .attr("class","yearlabel")
@@ -277,13 +281,16 @@ function createMannerView (data) {
     .attr("height", function(d) {
       return height(d.count);
     })
-    .attr("fill", function(d){return colorsRng[d.columnValue - 1];})
+    .attr("fill", function(d){return mannerColors[numberToLabel.manner[d.columnValue]];})
     .attr("class", "mannerbar")
     .on("mouseover",function(d,i) { 
     this.style.fill = "#772310"; 
     })
     .on("mouseout",function(d, i) { 
-        this.style.fill = colorsRng[i]; 
+        this.style.fill = mannerColors[numberToLabel.manner[d.columnValue]]; 
+    })
+    .attr("id", function(d,i){
+      return d.id;
     });
   
   var legend = svg.append("g")
@@ -324,6 +331,68 @@ function createMannerView (data) {
       return d});
 }
 
+function updateMannerView (data) {
+  // first, sort the data by 2013 numbers
+  var groupedByManner = {};
+  groupedByManner = getColumnCountByYear(data,"manner");
+
+  var data2003 = cumulate(groupedByManner["2003"]);
+  var data2008 = cumulate(groupedByManner["2008"]);
+  var data2013 = cumulate(groupedByManner["2013"]);
+
+  var svg = d3.select("#mannerViz");
+
+  var max2003 = data2003[data2003.length-1].cumulative + data2003[data2003.length-1].count;
+  var max2008 = data2008[data2008.length-1].cumulative + data2008[data2008.length-1].count;
+  var max2013 = data2013[data2013.length-1].cumulative + data2013[data2013.length-1].count;
+
+  var y = d3.scale.linear()
+  .domain([0,Math.max(max2003,max2008,max2013)])
+  .range([+svg.attr("height")-50,50]);
+
+  var height = d3.scale.linear()
+  .domain([0,Math.max(max2003,max2008,max2013)])
+  .range([0,+svg.attr("height")-100]);
+
+  //Do this by year -- doing them all at once got 
+  //really confusing. 
+  svg.selectAll(".year2003")
+    .selectAll(".mannerbar")
+    .data(data2003, function(d) {return "mannerBar" + d.year + d.columnValue;})
+    .transition()
+    .duration(2000)
+    .attr("y", function(d){
+      return y(d.cumulative) - height(d.count);
+    })
+    .attr("height", function(d) {
+      return height(d.count);
+    });
+
+  svg.selectAll(".year2008")
+    .selectAll(".mannerbar")
+    .data(data2008, function(d) {return "mannerBar" + d.year + d.columnValue;})
+    .transition()
+    .duration(2000)
+    .attr("y", function(d){
+      return y(d.cumulative) - height(d.count);
+    })
+    .attr("height", function(d) {
+      return height(d.count);
+    });
+
+  svg.selectAll(".year2013")
+    .selectAll(".mannerbar")
+    .data(data2013, function(d) {return "mannerBar" + d.year + d.columnValue;})
+    .transition()
+    .duration(2000)
+    .attr("y", function(d){
+      return y(d.cumulative) - height(d.count);
+    })
+    .attr("height", function(d) {
+      return height(d.count);
+    });
+}
+
 function createRaceView (data) {
     
   // first, sort the data by 2013 numbers
@@ -342,24 +411,25 @@ function createRaceView (data) {
   .domain([0,totalcount])
   .range([0,2*Math.PI]);
 
-  const colorsRng = [
-  "#6bcae2", "#51a5ba", "#41924b", "#afeaaa", "#87e293", "#fe8402", "#ff9933", "#ffd480", "#ffd480","#ffd480", "#ffd480", "#ffd480", "#ffd480", "#ffd480"];
+  var colorScale = d3.scale.linear()
+    .domain([0,1])
+    .range(["#ccffeb","#00804d"]);
 
   raceColors = {
-    "White": colorsRng[0],
-    "Black": colorsRng[1],
-    "American Indian": colorsRng[2],
-    "Chinese": colorsRng[3],
-    "Japanese": colorsRng[4],
-    "Hawaiian": colorsRng[5],
-    "Filipino": colorsRng[6],
-    "Asian Indian": colorsRng[7],
-    "Korean": colorsRng[8],
-    "Samoan": colorsRng[9],
-    "Vietnamese": colorsRng[10],
-    "Guamanian": colorsRng[11],
-    "Other Asian or Pacific Islander": colorsRng[12],
-    "Combined Asian or Pacific Islander": colorsRng[13]
+    "White": colorScale(0),
+    "Black": colorScale(1/13),
+    "American Indian": colorScale(2/13),
+    "Chinese": colorScale(3/13),
+    "Japanese": colorScale(4/13),
+    "Hawaiian": colorScale(5/13),
+    "Filipino": colorScale(6/13),
+    "Asian Indian": colorScale(7/13),
+    "Korean": colorScale(8/13),
+    "Samoan": colorScale(9/13),
+    "Vietnamese": colorScale(10/13),
+    "Guamanian": colorScale(11/13),
+    "Other Asian or Pacific Islander": colorScale(12/13),
+    "Combined Asian or Pacific Islander": colorScale(1)
   };
 
   var radius = 200;
@@ -398,12 +468,13 @@ function createRaceView (data) {
     .attr("d", raceArc)
     .attr("transform",  "translate(" + cx + "," + cy + ")")
     .attr("class", "raceslice")
-    .attr("fill", function(d,i){return colorsRng[i];})
+    .attr("fill", function(d,i){
+      return raceColors[numberToLabel.race[d.race]];})
     .on("mouseover",function(d,i) { 
       this.style.fill = "#772310"; 
     })
     .on("mouseout",function(d, i) { 
-        this.style.fill = colorsRng[i]; 
+        this.style.fill = raceColors[numberToLabel.race[d.race]];
     });
 
   var legend = svg.append("g")
@@ -445,6 +516,64 @@ function createRaceView (data) {
       return d});
 }
 
+function updateRaceView (data) {
+    
+  // first, sort the data by 2013 numbers
+  var groupedByRace = getCountByColumn(data,"race");
+
+  var totalcount = groupedByRace["total"];
+  delete groupedByRace["total"]
+
+  raceData = cumulate(Object.keys(groupedByRace).map(function(raceKey) {
+    return {race: raceKey, count: groupedByRace[raceKey]};
+  }));
+
+  var svg = d3.select("#raceViz");
+
+  var radius = 200;
+
+  if (+svg.attr("width")*4/5 > svg.attr("height")*4/5) {
+    radius = +svg.attr("width")*3/15;
+  } else {
+    radius = +svg.attr("height")*3/15;
+  }
+
+  var cx = +svg.attr("width")*4/10;
+  var cy = svg.attr("height")/2;
+
+  var raceArc = d3.svg.arc()
+      .innerRadius(radius/2)
+      .outerRadius(radius);
+  
+  var angle = d3.scale.linear()
+  .domain([0,totalcount])
+  .range([0,2*Math.PI]);
+
+  var races = svg.selectAll(".raceslice")
+    .each(function(d,i) {
+      var thisracedata = raceData.filter(function(row) {
+        return row.race === d.race;});
+      if (thisracedata.length > 0){
+        d.count = thisracedata[0].count;
+        d.cumulative = thisracedata[0].cumulative;
+      } else {
+        d.count = 0;
+      }
+      
+    })
+    .transition()
+    .duration(2000)
+    .attrTween("d", function(d,i) {
+      var interpolateEnd = d3.interpolate(d.endAngle,angle(d.count + d.cumulative));
+      var interpolateStart = d3.interpolate(d.startAngle,angle(d.cumulative));
+      return function(t) {
+          d.endAngle = interpolateEnd(t);
+          d.startAngle = interpolateStart(t);
+          return raceArc(d);
+      };
+    });
+}
+
 function createEducationView (data) {
     
   // first, sort the data by 2013 numbers
@@ -463,30 +592,31 @@ function createEducationView (data) {
   .domain([0,totalcount])
   .range([0,2*Math.PI]);
 
-  const colorsRng = [
-  "#6bcae2", "#51a5ba", "#41924b", "#afeaaa", "#87e293", "#fe8402", "#ff9933", "#ffd480", "#ffd480", "#ffd480", "#ffd480", "#ffd480", "#ffd480", "#ffd480", "#ffd480", "#ffd480", "#ffd480", "#ffd480", "#ffd480"
-  ];
+
+  var colorScale = d3.scale.linear()
+    .domain([0,1])
+    .range(["#e0ccff","#290066"]);
 
   var educationColors = {
-    "None": colorsRng[0],
-    "One Year of Elementary": colorsRng[1],
-    "Two Years of Elementary": colorsRng[2],
-    "Three Years of Elementary": colorsRng[3],
-    "Four Years of Elementary": colorsRng[4],
-    "Five Years of Elementary": colorsRng[5],
-    "Six Years of Elementary": colorsRng[6],
-    "Seven Years of Elementary": colorsRng[7],
-    "Eight Years of Elementary": colorsRng[8],
-    "One Year of High School": colorsRng[9],
-    "Two Years of High School": colorsRng[10],
-    "Three Years of High School": colorsRng[11],
-    "Four Years of High School": colorsRng[12],
-    "One Year of College": colorsRng[13],
-    "Two Years of College": colorsRng[14],
-    "Three Years of College": colorsRng[15],
-    "Four Years of College": colorsRng[16],
-    "Five or More Years of College": colorsRng[17],
-    "Not Stated": colorsRng[18]
+    "None": colorScale(0),
+    "One Year of Elementary": colorScale(1/18),
+    "Two Years of Elementary": colorScale(2/18),
+    "Three Years of Elementary": colorScale(3/18),
+    "Four Years of Elementary": colorScale(4/18),
+    "Five Years of Elementary": colorScale(5/18),
+    "Six Years of Elementary": colorScale(6/18),
+    "Seven Years of Elementary": colorScale(7/18),
+    "Eight Years of Elementary": colorScale(8/18),
+    "One Year of High School": colorScale(8/18),
+    "Two Years of High School": colorScale(10/18),
+    "Three Years of High School": colorScale(11/18),
+    "Four Years of High School":colorScale(12/18),
+    "One Year of College": colorScale(13/18),
+    "Two Years of College": colorScale(14/18),
+    "Three Years of College": colorScale(15/18),
+    "Four Years of College": colorScale(16/18),
+    "Five or More Years of College": colorScale(17/18),
+    "Not Stated": colorScale(1)
   };
 
   
@@ -525,13 +655,13 @@ function createEducationView (data) {
       d.endAngle = angle(d.cumulative + d.count);})
     .attr("d", educationArc)
     .attr("transform",  "translate(" + cx + "," + cy + ")")
-    .attr("class", "raceslice")
-    .attr("fill", function(d,i){return colorsRng[i];})
+    .attr("class", "educationslice")
+    .attr("fill", function(d,i){return educationColors[numberToLabel.education[d.education]];})
     .on("mouseover",function(d,i) { 
     this.style.fill = "#772310"; 
     })
     .on("mouseout",function(d, i) { 
-        this.style.fill = colorsRng[i]; 
+        this.style.fill = educationColors[numberToLabel.education[d.education]];
     });
 
   var legend = svg.append("g")
@@ -571,6 +701,66 @@ function createEducationView (data) {
     .style("text-anchor","start")
     .text(function(d,i){
       return d});
+}
+
+function updateEducationView (data) {
+    
+  // first, sort the data by 2013 numbers
+  var groupedByEducation = getCountByColumn(data,"education");
+
+  var totalcount = groupedByEducation["total"];
+  delete groupedByEducation["total"]
+
+  educationData = cumulate(Object.keys(groupedByEducation).map(function(educationKey) {
+    return {education: educationKey, count: groupedByEducation[educationKey]};
+  }));
+
+  var svg = d3.select("#educationViz");
+
+  var radius = 200;
+
+  if (+svg.attr("width")*4/5 > svg.attr("height")*4/5) {
+    radius = +svg.attr("width")*3/15;
+  } else {
+    radius = +svg.attr("height")*3/15;
+  }
+
+  var cx = +svg.attr("width")*4/10;
+  var cy = svg.attr("height")/2;
+
+  var educationArc = d3.svg.arc()
+      .innerRadius(radius/2)
+      .outerRadius(radius);
+  
+  var angle = d3.scale.linear()
+  .domain([0,totalcount])
+  .range([0,2*Math.PI]);
+
+  var educations = svg.selectAll(".educationslice")
+    .each(function(d,i) {
+      console.log(d);
+      var thiseducationdata = educationData.filter(function(row) {
+        return row.education === d.education;});
+      if (thiseducationdata.length > 0){
+        d.count = thiseducationdata[0].count;
+        d.cumulative = thiseducationdata[0].cumulative;
+      } else {
+        d.count = 0;
+      }
+      
+    })
+    .transition()
+    .duration(2000)
+    .attrTween("d", function(d,i) {
+      console.log(d);
+      var interpolateEnd = d3.interpolate(d.endAngle,angle(d.count + d.cumulative));
+      var interpolateStart = d3.interpolate(d.startAngle,angle(d.cumulative));
+      return function(t) {
+          d.endAngle = interpolateEnd(t);
+          d.startAngle = interpolateStart(t);
+          return educationArc(d);
+      };
+    });
 }
     
 function getTemporaryData () {
@@ -616,6 +806,53 @@ function getTemporaryData () {
     activity: "test",
     manner: 2, 
     count: 15}];
+
+  return data;
+}
+
+function getUpdatedData () {
+  data = [{year: 2003, 
+    race: "01", 
+    education: "10",
+    place: "test",
+    activity: "test",
+    manner: 1, 
+    count: 30},
+  {year: 2008, 
+    race: "02", 
+    education: "11",
+    place: "test",
+    activity: "test",
+    manner: 1, 
+    count: 30},
+  {year: 2013, 
+    race: "03", 
+    education: "12",
+    place: "test",
+    activity: "test",
+    manner: 1, 
+    count: 10},
+  {year: 2003, 
+    race: "01", 
+    education: "12",
+    place: "test",
+    activity: "test",
+    manner: 2, 
+    count: 15},
+  {year: 2008, 
+    race: "01", 
+    education: "10",
+    place: "test",
+    activity: "test",
+    manner: 2, 
+    count: 50},
+  {year: 2013, 
+    race: "02", 
+    education: "11",
+    place: "test",
+    activity: "test",
+    manner: 2, 
+    count: 10}];
 
   return data;
 }
