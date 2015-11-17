@@ -738,7 +738,6 @@ function updateEducationView (data) {
 
   var educations = svg.selectAll(".educationslice")
     .each(function(d,i) {
-      console.log(d);
       var thiseducationdata = educationData.filter(function(row) {
         return row.education === d.education;});
       if (thiseducationdata.length > 0){
@@ -752,7 +751,6 @@ function updateEducationView (data) {
     .transition()
     .duration(2000)
     .attrTween("d", function(d,i) {
-      console.log(d);
       var interpolateEnd = d3.interpolate(d.endAngle,angle(d.count + d.cumulative));
       var interpolateStart = d3.interpolate(d.startAngle,angle(d.cumulative));
       return function(t) {
