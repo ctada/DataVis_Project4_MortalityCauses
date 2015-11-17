@@ -53,12 +53,6 @@ def pullVizData():
                             mortality.Manner_Of_Death, 
                             COUNT(mortality.year)
                         FROM mortality 
-                        WHERE mortality.Education != '99' AND 
-                            mortality.Education != '9' AND 
-                            mortality.Education != '' AND 
-                            mortality.Place_Of_Death != '9' AND
-                            mortality.Activity_Code != '' AND
-                            mortality.Manner_Of_Death !=''  
                         GROUP BY mortality.year, 
                             mortality.Education,
                             mortality.Race_Recode_5, 
@@ -196,7 +190,6 @@ def pullAverageAgeByCause():
                         GROUP BY mortality.Cause_Recode_39, 
                             mortality.year, 
                             mortality.Age_Key """)
-
 
         data = [{"cause": int(cause),
             "year": int(year),
