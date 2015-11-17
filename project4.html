@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html>
+  
+  <head>
+    
+    <meta charset="utf-8">
+    <title>Mortality Demo</title>
+
+    <!-- load D3 library -->
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.6/d3.min.js" charset="utf-8"></script>
+
+    <style type = 'text/css'>
+    body { font-family: 'Helvetica Neue', Helvetica; font-weight: 300; padding: 20px;}
+    th { text-align: left; }
+    th, td { padding: 0 1em 0.5ex 0;}
+    </style>
+
+  </head>
+  
+  <body>
+
+
+    <div>
+      <!--<svg id="viz" height="500" width="800" style="border: 1px solid grey;">
+      </svg>-->
+    </div>
+
+    <script>
+
+
+/*
+ * Demo: Mortality 2008/2013
+ * 
+ */
+
+
+/*
+ * Call run when the page finishes loading
+ *
+ */
+      
+window.addEventListener("load",run);
+
+
+function run () {
+    /*
+    var svg = d3.select("#viz");
+    svg.append("text")
+	.attr("id","loading")
+	.attr("x",+svg.attr("width")/2)
+	.attr("y",+svg.attr("height")/2)
+	.attr("dy","0.35em")
+	.style("text-anchor","middle")
+	.text("loading data...");
+    */
+    d3.select("body")
+        .append("text")
+        .text("loading data")
+        .attr("id", "msg");
+
+    getData("",function(data) {
+        d3.select("#msg").remove();
+        console.log("data",data);
+    });
+}
+
+function getData (url, f) {
+
+    d3.json("data")
+    .header("Content-Type", "application/x-www-form-urlencoded")
+    .get(
+         function(error,data) {
+         if (error) {
+             //d3.select("#loading").remove();
+             console.log(error);
+         } else {
+             //d3.select("#loading").remove();
+             console.log(" data =", data);
+             f(data);
+         }
+         });
+}
+
+function createPlaceView(data){
+    var causes = Object.keys(data);
+
+    var svg = d3.select("#viz");
+    
+    var g = svg.selectAll("g")
+    .data(causes)
+    .enter()
+    .append("g")
+    
+    g.append('image')
+      .attr('xlink:href','icon/home.png')
+      .attr('height', '100')
+      .attr('width', '100')
+      .attr('x', '59')
+      .attr('y', '50')
+   
+}
+
+PLACE = {
+    "0" : "Home",
+    "1" : "Residential institution",
+    "2" : "School, other institution and public administrative area",
+    "3" : "Sports and athletics area",
+    "4" : "Street and highway",
+    "5" : "Trade and service area",
+    "6" : "Industrial and construction area",
+    "7" : "Farm",
+    "8" : "Other Specified Places"
+}
+ACTIVITY= {
+    "0":"While engaged in sports activity",
+    "1":"While engaged in leisure activity",
+    "2":"While working for income",
+    "3":"While engaged in other types of work",
+    "4":"While resting, sleeping, eating (vital activities)",
+    "8":"While engaged in other specified activities",
+    "9":"During unspecified activity"
+}
+
+    </script>
+    
+  </body>
+  
+</html>
