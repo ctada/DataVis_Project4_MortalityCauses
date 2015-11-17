@@ -79,11 +79,11 @@ def pullVizData():
                             mortality.Race_Recode_5, 
                             mortality.Place_Of_Death,
                             mortality.Activity_Code,
-                            mortality.Manner_Of_Death
+                            mortality.Manner_Of_Death, 
+                            COUNT(mortality.year)
                         FROM mortality 
                         WHERE mortality.Education != '99' AND 
                             mortality.Place_Of_Death != '9' AND
-                            mortality.Place_Of_Death != '' AND
                             mortality.Activity_Code != '' AND
                             mortality.Manner_Of_Death !=''  
                         GROUP BY mortality.year, 
@@ -99,8 +99,10 @@ def pullVizData():
             "race": race,
             "place": place,
             "activity": activity,
-            "manner": manner} for (year, education, race, place, activity, manner) in cur.fetchall()]
+            "manner": manner,
+            "count":count} for (year, education, race, place, activity, manner, count) in cur.fetchall()]
 
+        print data; 
         #groupedData = group_by(data, "year")
         #jsonData = []
 
