@@ -60,8 +60,6 @@ function run () {
         .attr("id", "msg");
 
     getData("",function(data) {
-        // gets {"TopCauseByAge": topCause, "AverageAgeForCause": avgAge}
-      //createView(data) });
         d3.select("#msg").remove();
         console.log("data",data);
     });
@@ -69,15 +67,15 @@ function run () {
 
 function getData (url, f) {
 
-    d3.json("dataviz")
+    d3.json("data")
     .header("Content-Type", "application/x-www-form-urlencoded")
     .get(
          function(error,data) {
          if (error) {
-             d3.select("#loading").remove();
+             //d3.select("#loading").remove();
              console.log(error);
          } else {
-             d3.select("#loading").remove();
+             //d3.select("#loading").remove();
              console.log(" data =", data);
              f(data);
          }

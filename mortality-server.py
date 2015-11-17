@@ -38,35 +38,6 @@ def group_by (rows,field):
 # Group the results by cause of death and
 # by year
 
-def pullData (gender):
-    # ignore age & gender for now
-    conn = sqlite3.connect(MORTALITYDB)
-    cur = conn.cursor()
-
-    try: 
-        if gender:
-            cur.execute("""SELECT year, Cause_Recode_39, SUM(1) as total 
-                           FROM mortality
-                           WHERE sex = '%s'
-                           GROUP BY year, Cause_Recode_39""" % (gender))
-        else:
-            cur.execute("""SELECT year, Cause_Recode_39, SUM(1) as total 
-                           FROM mortality
-                           GROUP BY year, Cause_Recode_39""")
-        data = [{"year":int(year),
-                 "cause":int(cause),
-                 "total":total} for (year, cause, total,) in  cur.fetchall()]
-        grouped_data = group_by(data,"cause")
-        for cause in grouped_data:
-            grouped_data[cause]= group_by(grouped_data[cause],"year")
-        conn.close()
-        return grouped_data
-
-    except: 
-        print "ERROR!!!"
-        conn.close()
-        raise
-
 def pullVizData():
  # return year, race recode 5, education, place of death/ activity, manner, # 
     conn = sqlite3.connect(MORTALITYDB)
@@ -83,6 +54,8 @@ def pullVizData():
                             COUNT(mortality.year)
                         FROM mortality 
                         WHERE mortality.Education != '99' AND 
+                            mortality.Education != '9' AND 
+                            mortality.Education != '' AND 
                             mortality.Place_Of_Death != '9' AND
                             mortality.Activity_Code != '' AND
                             mortality.Manner_Of_Death !=''  
@@ -102,11 +75,11 @@ def pullVizData():
             "manner": manner,
             "count":count} for (year, education, race, place, activity, manner, count) in cur.fetchall()]
 
-        print data; 
+        print data 
         #groupedData = group_by(data, "year")
         #jsonData = []
 
-        return data; 
+        return data;
         
     except:
         print "ERROR!!!"
@@ -278,18 +251,11 @@ def ageData ():
 #
 # Return the result in JSON format
 
-@get("/data")
-def data ():
-    print list(request.query)
-    gender = request.query.gender
-
-    print "gender =", gender
-    return pullData(gender)
 
 # URI for getting data for visualization
-@get("/dataviz")
+@get("/data")
 def vizData ():
-    return pullVizData()
+    return {"vizdata": pullVizData()} #make code happy with formatting
     
 # URI for getting a static file from the
 # server
