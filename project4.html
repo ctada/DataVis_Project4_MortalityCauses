@@ -115,7 +115,28 @@ var numberToLabel = {
     "16": "Four Years of College",
     "17": "Five or More Years of College",
     "99": "Not Stated",
-  }
+
+  },
+  place : {
+    "0" : "Home",
+    "1" : "Residential institution",
+    "2" : "School, other institution and public administrative area",
+    "3" : "Sports and athletics area",
+    "4" : "Street and highway",
+    "5" : "Trade and service area",
+    "6" : "Industrial and construction area",
+    "7" : "Farm",
+    "8" : "Other Specified Places"
+    },
+    activity : {
+    "0":"While engaged in sports activity",
+    "1":"While engaged in leisure activity",
+    "2":"While working for income",
+    "3":"While engaged in other types of work",
+    "4":"While resting, sleeping, eating (vital activities)",
+    "8":"While engaged in other specified activities",
+    "9":"During unspecified activity"
+    }
 };
 
 var GLOBAL ={
@@ -1068,21 +1089,17 @@ function createPlaceView(data){
     .append("g");
 
     g.append('image')
-        .attr('xlink:href', function(d){console.log(d);return 'project4_icons-0'+d+'.png';})
+        .attr('xlink:href', function(d){return 'project4_icons-0'+d+'.png';})
         .attr('height', function(d){return +places[d];})
         .attr('width', function(d){return +places[d];})
-        .attr('x', function(d,i){return (i+.5)*chartWidth/place_indices.length -.5*+places[d] + margin;})
+        .attr('x', function(d,i){return (i%parseInt(place_indices.length/2)+.5)*chartWidth/parseInt(place_indices.length/2) -.5*+places[d] + margin;})
         .attr('y', function(d,i){return (i%2 +.5)*(chartHeight/2) - .5*+places[d] + margin + padding;});
 
     g.append("text")
-        .text(function(d){return PLACE[d];})
-        .attr("x", function(d,i){return (i+.5)*chartWidth/place_indices.length + margin;})
+        .text(function(d){return numberToLabel.place[d];})
+        .attr("x", function(d,i){return (i%parseInt(place_indices.length/2)+.5)*chartWidth/parseInt(place_indices.length/2) + margin;})
         .attr("y", function(d,i){return (i%2)*(chartHeight/2) + margin;})        
-        .style("text-anchor","middle")
-        .style("font-family","sans-serif")
-        .style("font-weight","bold")
-        .style("font-size","16px")
-        .style("fill", "#669999");
+        .style("text-anchor","middle");
    
 }
 function createActivityView(data){
@@ -1104,60 +1121,30 @@ function createActivityView(data){
     .data(act_indices)
     .enter()
     .append("g");
-
    
-    // g.selectAll("g")
-    //     .data(activities)
-    //     .enter()
-    //     .append('image')
+    // g.append('image')
     //     .attr('xlink:href', function(d){return 'project4_icons-0'+d+'.png';})
     //     .attr('height', function(d){return +activities[d]/1000;})
     //     .attr('width', function(d){return +activities[d]/1000;})
     //     .attr('x', function(d,i){return (i+.5)*chartWidth/act_indices.length + margin;})
     //     .attr('y', function(d,i){return (i%2 +1)*(chartHeight/2) + margin + padding;});
 
-    // g.selectAll("circle")
-    //     .data(act_indices)
-    //     .enter()
     g.append("circle")
         .attr("cx", function(d,i){return (i+.5)*chartWidth/act_indices.length + margin;})
         .attr("cy", function(d,i){return ((i%2) + .5)*(chartHeight/2) + margin + padding;})
-        .attr("r", function(d){console.log(ACTIVITY[d],activities[d]); return +activities[d];})
+        .attr("r", function(d){return +activities[d];}) //arbitary scaling
         .style("fill", "red")
         .style("opacity",".3");
 
     g.append("text")
-        .text(function(d){return ACTIVITY[d];})
+        .text(function(d){return numberToLabel.activity[d];})
         .attr("x", function(d,i){return (i+.5)*chartWidth/act_indices.length + margin;})
         .attr("y", function(d,i){return (i%2)*(chartHeight/2) + margin;})        
-        .style("text-anchor","middle")
-        .style("font-family","sans-serif")
-        .style("font-weight","bold")
-        .style("font-size","12px")
-        .style("fill", "#669999");
+        .style("text-anchor","middle");
           
 }
 
-PLACE = {
-    "0" : "Home",
-    "1" : "Residential institution",
-    "2" : "School, other institution and public administrative area",
-    "3" : "Sports and athletics area",
-    "4" : "Street and highway",
-    "5" : "Trade and service area",
-    "6" : "Industrial and construction area",
-    "7" : "Farm",
-    "8" : "Other Specified Places"
-}
-ACTIVITY= {
-    "0":"While engaged in sports activity",
-    "1":"While engaged in leisure activity",
-    "2":"While working for income",
-    "3":"While engaged in other types of work",
-    "4":"While resting, sleeping, eating (vital activities)",
-    "8":"While engaged in other specified activities",
-    "9":"During unspecified activity"
-}
+
 
     </script>
     
