@@ -52,11 +52,14 @@
 
 
     <div>
+
       <svg id="mannerViz" height="250" width="400" style="border: 1px solid grey;">
       </svg>
       <svg id="raceViz" height="250" width="400" style="border: 1px solid grey;">
       </svg>
       <svg id="educationViz" height="250" width="400" style="border: 1px solid grey;">
+      <svg id="viz_place" height="500" width="800" style="border: 1px solid grey;"></svg>
+      <svg id="viz_activity" height="500" width="800" style="border: 1px solid grey;"></svg>
     </div>
 
     <script>
@@ -125,27 +128,23 @@ var GLOBAL ={
 };
 
 function run () {
-    /*
-    var svg = d3.select("#viz");
-    svg.append("text")
+    
+    var svgs = d3.select("svg");
+    svgs.append("text")
 	.attr("id","loading")
 	.attr("x",+svg.attr("width")/2)
 	.attr("y",+svg.attr("height")/2)
 	.attr("dy","0.35em")
 	.style("text-anchor","middle")
 	.text("loading data...");
-    */
-    d3.select("body")
-      .append("text")
-      .text("loading data")
-      .attr("id", "msg");
 
     getData("",function(data) {
-      d3.select("#msg").remove();
-      GLOBAL.data = data.vizdata;
+      GLOBAL.data = data;
       createMannerView(GLOBAL.data);
       createRaceView(GLOBAL.data);
       createEducationView(GLOBAL.data);
+      createPlaceView(data);
+      createActivityView(data);
     });
 }
 
@@ -990,33 +989,153 @@ function getData (url, f) {
     .get(
          function(error,data) {
          if (error) {
-             //d3.select("#loading").remove();
+             d3.select("#loading").remove();
+             d3.select("#loading2").remove();
              console.log(error);
          } else {
-             //d3.select("#loading").remove();
+             d3.select("#loading").remove();
+             d3.select("#loading2").remove();
              console.log(" data =", data);
-             f(data);
+             f(data["vizdata"]);
          }
          });
 }
 
-function createPlaceView(data){
-    var causes = Object.keys(data);
+/*
+ * Function for getting the total from the
+ * data for a given manner and a given year
+ * (returns 0 if there's no such entry in
+ * the data)
+ * 
+ */
+function getCountByColumn(data, column){
+  columnData = {total: 0};
+  data.forEach(function(row) {
+    if (column in row) {
+      if (row[column] in columnData){
+        columnData[row[column]] += row.count;
+      } else {
+        columnData[row[column]] = row.count;
+      }
+      columnData.total += row.count
+    }
+  })
+  return columnData;
+}
+function getColumnCountByYear(data, column){
+  columnData = {};
+  data.forEach(function(row){
+    if (column in row) {
+      if (row.year in columnData) {
+        columnData[row.year].push({
+          year: row.year,
+          column: column,
+          columnValue: row[column],
+          count: row.count, 
+          id: "mannerBar" + row.year + row[column]});
+      } else {
+        columnData[row.year] = [];
+        columnData[row.year].push({
+          year: row.year,
+          column: column,
+          columnValue: row[column],
+          count: row.count,
+          id: "mannerBar" + row.year + row[column]});
+      }
+    }
+  })
+  return columnData;
+}
 
-    var svg = d3.select("#viz");
+function createPlaceView(data){
+    var svg = d3.select("#viz_place");
+    var height = svg.attr("height");
+    var width = svg.attr("width");
+
+    // set chart-specific variables
+    var margin = 15;
+    var padding = 10;
+    var chartHeight = height - 2*margin;
+    var chartWidth = width - 2*margin;
+    var places = getCountByColumn(data, "place"); 
+
+    var place_indices= d3.keys(places);
+    place_indices.pop();
     
     var g = svg.selectAll("g")
-    .data(causes)
+    .data(place_indices)
     .enter()
-    .append("g")
-    
+    .append("g");
+
     g.append('image')
-      .attr('xlink:href','icon/home.png')
-      .attr('height', '100')
-      .attr('width', '100')
-      .attr('x', '59')
-      .attr('y', '50')
+        .attr('xlink:href', function(d){console.log(d);return 'project4_icons-0'+d+'.png';})
+        .attr('height', function(d){return +places[d];})
+        .attr('width', function(d){return +places[d];})
+        .attr('x', function(d,i){return i*chartWidth/place_indices.length + margin;})
+        .attr('y', function(d,i){return ((i%2)+.5)*(chartHeight/2) + margin + padding;});
+
+    g.append("text")
+        .text(function(d){return PLACE[d];})
+        .attr("x", function(d,i){return (i+.5)*chartWidth/place_indices.length + margin;})
+        .attr("y", function(d,i){return (i%2)*(chartHeight/2) + margin;})        
+        .style("text-anchor","middle")
+        .style("font-family","sans-serif")
+        .style("font-weight","bold")
+        .style("font-size","16px")
+        .style("fill", "#669999");
    
+}
+function createActivityView(data){
+    var svg = d3.select("#viz_activity");
+    var height = svg.attr("height");
+    var width = svg.attr("width");
+
+    // set chart-specific variables
+    var margin = 15;
+    var padding = 10;
+    var chartHeight = height - 2*margin;
+    var chartWidth = width - 2*margin;
+    var activities = getCountByColumn(data, "activity"); 
+
+    var act_indices= d3.keys(activities);
+    act_indices.pop();
+
+    var g = svg.selectAll("g")
+    .data(act_indices)
+    .enter()
+    .append("g");
+
+   
+    // g.selectAll("g")
+    //     .data(activities)
+    //     .enter()
+    //     .append('image')
+    //     .attr('xlink:href', function(d){return 'project4_icons-0'+d+'.png';})
+    //     .attr('height', function(d){return +activities[d]/1000;})
+    //     .attr('width', function(d){return +activities[d]/1000;})
+    //     .attr('x', function(d,i){return (i+.5)*chartWidth/act_indices.length + margin;})
+    //     .attr('y', function(d,i){return (i%2 +1)*(chartHeight/2) + margin + padding;});
+
+    // g.selectAll("circle")
+    //     .data(act_indices)
+    //     .enter()
+    g.append("circle")
+        .attr("cx", function(d,i){return (i+.5)*chartWidth/act_indices.length + margin;})
+        .attr("cy", function(d,i){return ((i%2) + .5)*(chartHeight/2) + margin + padding;})
+        .attr("r", function(d){console.log(ACTIIVITY[d],activities[d]); return +activities[d];})
+        .style("fill", "red")
+        .style("opacity",".3");
+
+    g.append("text")
+        .text(function(d){return ACTIVITY[d];})
+        .attr("x", function(d,i){return (i+.5)*chartWidth/act_indices.length + margin;})
+        .attr("y", function(d,i){return (i%2)*(chartHeight/2) + margin;})        
+        .style("text-anchor","middle")
+        .style("font-family","sans-serif")
+        .style("font-weight","bold")
+        .style("font-size","12px")
+        .style("fill", "#669999");
+          
 }
 
 PLACE = {
