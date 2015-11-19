@@ -154,27 +154,13 @@ function createPlaceView(data){
     .enter()
     .append("g");
 
-   
-    // g.selectAll("g")
-    //     .data(place_indices)
-    //     .enter()
     g.append('image')
         .attr('xlink:href', function(d){console.log(d);return 'project4_icons-0'+d+'.png';})
         .attr('height', function(d){return +places[d];})
         .attr('width', function(d){return +places[d];})
         .attr('x', function(d,i){return i*chartWidth/place_indices.length + margin;})
-        .attr('y', function(d,i){return (i%2)*(chartHeight/2) + margin + padding;});
+        .attr('y', function(d,i){return ((i%2)+.5)*(chartHeight/2) + margin + padding;});
 
-    g.append("circle")
-        .attr("cx", function(d,i){return (i+.5)*chartWidth/place_indices.length + margin;})
-        .attr("cy", function(d,i){return ((i%2) + .5)*(chartHeight/2) + margin + padding;})
-        .attr("r", function(d){console.log(PLACE[d],places[d]); return +places[d];})
-        .style("fill", "red")
-        .style("opacity",".2");
-
-    // g.selectAll("text")
-    //     .data(place_indices)
-    //     .enter()
     g.append("text")
         .text(function(d){return PLACE[d];})
         .attr("x", function(d,i){return (i+.5)*chartWidth/place_indices.length + margin;})
@@ -223,7 +209,7 @@ function createActivityView(data){
     g.append("circle")
         .attr("cx", function(d,i){return (i+.5)*chartWidth/act_indices.length + margin;})
         .attr("cy", function(d,i){return ((i%2) + .5)*(chartHeight/2) + margin + padding;})
-        .attr("r", function(d){console.log(d,activities[d]); return +activities[d];})
+        .attr("r", function(d){console.log(ACTIIVITY[d],activities[d]); return +activities[d];})
         .style("fill", "red")
         .style("opacity",".3");
 
