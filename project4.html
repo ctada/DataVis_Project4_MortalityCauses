@@ -22,8 +22,8 @@
 
 
     <div>
-      <svg id="viz" height="500" width="800" style="border: 1px solid grey;">
-      </svg>
+      <svg id="viz_place" height="500" width="800" style="border: 1px solid grey;"></svg>
+      <svg id="viz_activity" height="500" width="800" style="border: 1px solid grey;"></svg>
     </div>
 
     <script>
@@ -45,7 +45,7 @@ window.addEventListener("load",run);
 
 function run () {
     
-    var svg = d3.select("#viz");
+    var svg = d3.select("#viz_place");
     svg.append("text")
 	.attr("id","loading")
 	.attr("x",+svg.attr("width")/2)
@@ -54,8 +54,18 @@ function run () {
 	.style("text-anchor","middle")
 	.text("loading data...");
 
+    var svg2 = d3.select("#viz_activity");
+    svg2.append("text")
+    .attr("id","loading2")
+    .attr("x",+svg.attr("width")/2)
+    .attr("y",+svg.attr("height")/2)
+    .attr("dy","0.35em")
+    .style("text-anchor","middle")
+    .text("loading data...");
+
     getData("",function(data) {
         createPlaceView(data);
+        createActivityView(data);
     });
 }
 
@@ -67,9 +77,11 @@ function getData (url, f) {
          function(error,data) {
          if (error) {
              d3.select("#loading").remove();
+             d3.select("#loading2").remove();
              console.log(error);
          } else {
              d3.select("#loading").remove();
+             d3.select("#loading2").remove();
              console.log(" data =", data);
              f(data["vizdata"]);
          }
@@ -122,20 +134,9 @@ function getColumnCountByYear(data, column){
   return columnData;
 }
 
-function cumulate(data){
-  data.forEach(function(row, i){
-    if (i === 0){
-      row.cumulative = 0;
-    } else {
-      row.cumulative = data[i-1].cumulative + data[i-1].count;
-    }
-  });
-  return data;
-}
-
 function createPlaceView(data){
-    var svg = d3.select("#viz");
-        var height = svg.attr("height");
+    var svg = d3.select("#viz_place");
+    var height = svg.attr("height");
     var width = svg.attr("width");
 
     // set chart-specific variables
@@ -162,23 +163,69 @@ function createPlaceView(data){
         .attr('height', function(d){return +places[d]/1000;})
         .attr('width', function(d){return +places[d]/1000;})
         .attr('x', function(d,i){return (i+.5)*chartWidth/place_indices.length + margin;})
-        .attr('y', function(d,i){return (i%2 +1)*(chartHeight/2) + margin + padding;});
+        .attr('y', function(d,i){return (i%2)*(chartHeight/2) + margin + padding;});
 
-    // g.selectAll("circle")
-    //     .data(place_indices)
-    //     .enter()
-    //     .append("circle")
-    //     .attr("cx", function(d,i){return (i+.5)*chartWidth/place_indices.length + margin;})
-    //     .attr("cy", "100")
-    //     .attr("r", function(d){return +places[d]/1000;})
-    //     .style("fill", "red");
     g.selectAll("text")
         .data(place_indices)
         .enter()
         .append("text")
         .text(function(d){return PLACE[d];})
         .attr("x", function(d,i){return (i+.5)*chartWidth/place_indices.length + margin;})
-        .attr("y", function(d,i){return (i%2 +1)*(chartHeight/2) + margin + padding;})        
+        .attr("y", function(d,i){return (i%2)*(chartHeight/2) + margin;})        
+        .style("text-anchor","middle")
+        .style("font-family","sans-serif")
+        .style("font-weight","bold")
+        .style("font-size","16px")
+        .style("fill", "#669999");;
+   
+}
+function createActivityView(data){
+    var svg = d3.select("#viz_activity");
+    var height = svg.attr("height");
+    var width = svg.attr("width");
+
+    // set chart-specific variables
+    var margin = 15;
+    var padding = 10;
+    var chartHeight = height - 2*margin;
+    var chartWidth = width - 2*margin;
+    var activities = getCountByColumn(data, "activity"); 
+
+    var act_indices= d3.keys(activities);
+    act_indices.pop();
+    
+    var g = svg.selectAll("g")
+    .data(activities)
+    .enter()
+    .append("g");
+
+   
+    // g.selectAll("g")
+    //     .data(activities)
+    //     .enter()
+    //     .append('image')
+    //     .attr('xlink:href', function(d){return 'project4_icons-0'+d+'.png';})
+    //     .attr('height', function(d){return +activities[d]/1000;})
+    //     .attr('width', function(d){return +activities[d]/1000;})
+    //     .attr('x', function(d,i){return (i+.5)*chartWidth/act_indices.length + margin;})
+    //     .attr('y', function(d,i){return (i%2 +1)*(chartHeight/2) + margin + padding;});
+
+    g.selectAll("circle")
+        .data(act_indices)
+        .enter()
+        .append("circle")
+        .attr("cx", function(d,i){return (i+.5)*chartWidth/act_indices.length + margin;})
+        .attr("cy", function(d,i){return (i%2 + .5)*(chartHeight/2) + margin + padding;})
+        .attr("r", function(d){return +activities[d]/1000;})
+        .style("fill", "red");
+
+    g.selectAll("text")
+        .data(act_indices)
+        .enter()
+        .append("text")
+        .text(function(d){return ACTIVITY[d];})
+        .attr("x", function(d,i){return (i+.5)*chartWidth/act_indices.length + margin;})
+        .attr("y", function(d,i){return (i%2)*(chartHeight/2) + margin;})        
         .style("text-anchor","middle")
         .style("font-family","sans-serif")
         .style("font-weight","bold")
