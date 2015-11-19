@@ -11,20 +11,27 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.6/d3.min.js" charset="utf-8"></script>
 
     <style type = 'text/css'>
-    body { font-family: 'Helvetica Neue', Helvetica; font-weight: 300; padding: 20px;}
-    th { text-align: left; }
-    th, td { padding: 0 1em 0.5ex 0;}
+      body { font-family: 'Helvetica Neue', Helvetica; 
+        font-weight: 300; 
+        padding: 20px;
+      }
+      th { 
+        text-align: left; 
+      }
+      th, td { 
+        padding: 0 1em 0.5ex 0;
+      }
       text {
           font-family: sans-serif;
        }
       .charttitle {
-          font-size: 25px;
-      }
-      .legendtitle{
           font-size: 20px;
       }
+      .legendtitle{
+          font-size: 15px;
+      }
       .legendlabel{
-          font-size: 10px;
+          font-size: 6px;
       }
       .userslice { 
            stroke: white;
@@ -45,11 +52,11 @@
 
 
     <div>
-      <svg id="mannerViz" height="500" width="800" style="border: 1px solid grey;">
+      <svg id="mannerViz" height="250" width="400" style="border: 1px solid grey;">
       </svg>
-      <svg id="raceViz" height="500" width="800" style="border: 1px solid grey;">
+      <svg id="raceViz" height="250" width="400" style="border: 1px solid grey;">
       </svg>
-      <svg id="educationViz" height="500" width="800" style="border: 1px solid grey;">
+      <svg id="educationViz" height="250" width="400" style="border: 1px solid grey;">
     </div>
 
     <script>
@@ -75,7 +82,7 @@ var numberToLabel = {
     "3": "Homicide",
     "4": "Pending Investigation",
     "5": "Could Not Determine",
-    "6": "Self-Inflicted",
+    // "6": "Self-Inflicted",
     "7": "Natural",
     "Blank": "Not Specified"
   },
@@ -109,7 +116,12 @@ var numberToLabel = {
 };
 
 var GLOBAL ={
-  data: []
+  data: [],
+  selected: {
+    race: [],
+    education: [],
+    yearManner: [],
+  }
 };
 
 function run () {
@@ -124,18 +136,16 @@ function run () {
 	.text("loading data...");
     */
     d3.select("body")
-        .append("text")
-        .text("loading data")
-        .attr("id", "msg");
+      .append("text")
+      .text("loading data")
+      .attr("id", "msg");
 
     getData("",function(data) {
-        d3.select("#msg").remove();
-        console.log("data",data);
-        GLOBAL.data = data.vizdata;
-        console.log(GLOBAL.data);
-        createMannerView(GLOBAL.data);
-        createRaceView(GLOBAL.data);
-    createEducationView(GLOBAL.data);
+      d3.select("#msg").remove();
+      GLOBAL.data = data.vizdata;
+      createMannerView(GLOBAL.data);
+      createRaceView(GLOBAL.data);
+      createEducationView(GLOBAL.data);
     });
 }
 
@@ -146,9 +156,22 @@ function run () {
  * the data)
  * 
  */
-function getCountByColumn(data, column){
-  columnData = {total: 0};
+function getCountByColumn(data, column, sYearManner, sRace, sEdu){
+  var checkYearManner = sYearManner.length > 0 ? 1 : 0;
+  var checkRace = sRace.length > 0 ? 1 : 0;
+  var checkEdu = sEdu.length > 0 ? 1 : 0;
+
+  var columnData = {total: 0};
+
   data.forEach(function(row) {
+    if (checkYearManner && sYearManner.indexOf(("y" + row.year + "m" + row.manner)) === -1) {
+      return;
+    } else if (checkRace && sRace.indexOf(row.race) === -1){
+      return;
+    } else if (checkEdu && sEdu.indexOf(row.education) === -1){
+      return;
+    }
+
     if (column in row) {
       if (row[column] === "9" || row[column] === ""){
         row[column] = "99";
@@ -164,57 +187,51 @@ function getCountByColumn(data, column){
   return columnData;
 }
 
-function getColumnCountByYear(data, column){
-  columnData = {};
+function getColumnCountByYear(data, column, sYearManner, sRace, sEdu){
+  
+  var checkYearManner = sYearManner.length > 0 ? 1 : 0;
+  var checkRace = sRace.length > 0 ? 1 : 0;
+  var checkEdu = sEdu.length > 0 ? 1 : 0;
+
+  var columnData = {};
+
   data.forEach(function(row){
-    if (column in row) {
-      if (row.year in columnData) {
-        if (row[column] in columnData[row.year]){
-          columnData[row.year][row[column]].count += row.count;
-        }
-        else {
-          if (row[column] === ""){
-            row[column] = "Blank";
-          }
-          columnData[row.year][row[column]] = {
-            year: row.year,
-            column: column,
-            columnValue: row[column],
-            count: row.count,
-            id: "mannerBar" + row.year + row[column]};
-        }
-      } else {
-        if (row[column] === ""){
-          row[column] = "Blank";
-        }
-        columnData[row.year] = {};
-        columnData[row.year][row[column]] = {
-            year: row.year,
-            column: column,
-            columnValue: row[column],
-            count: row.count,
-            id: "mannerBar" + row.year + row[column]};
+    if (row.manner === ""){
+      row.manner = "Blank";
+    }
+    if (checkYearManner && sYearManner.indexOf("y" + row.year + "m" + row.manner) === -1) {
+      return;
+    } else if (checkRace && sRace.indexOf(row.race) === -1){
+      return;
+    } else if (checkEdu && sEdu.indexOf(row.education) === -1){
+      return;
+    }
+    if (row.year in columnData) {
+      if (row[column] in columnData[row.year]){
+        columnData[row.year][row[column]].count += row.count;
       }
+      else {
+        columnData[row.year][row[column]] = {
+          year: row.year,
+          column: column,
+          columnValue: row[column],
+          count: row.count,
+          id: "mannerBar" + row.year + row[column]};
+      }
+    } else {
+      columnData[row.year] = {};
+      columnData[row.year][row[column]] = {
+          year: row.year,
+          column: column,
+          columnValue: row[column],
+          count: row.count,
+          id: "mannerBar" + row.year + row[column]};
     }
   })
   return columnData;
 }
 
-function cumulateJson(data){
-  arraydata = []
-  Object.keys(data).forEach(function(key, i){
-    cumulativeJsonData = data[key];
-    if (i === 0){
-      cumulativeJsonData.cumulative = 0;
-    } else {
-      cumulativeJsonData.cumulative = arraydata[i-1].cumulative + arraydata[i-1].count;
-    }
-    arraydata.push(cumulativeJsonData);
-  });
-  return arraydata;
-}
-
-function cumulateArray(data){
+function cumulate(data){
   data.forEach(function(row, i){
     if (i === 0){
       row.cumulative = 0;
@@ -229,11 +246,18 @@ function createMannerView (data) {
     
   // first, sort the data by 2013 numbers
 
-  var groupedByManner = getColumnCountByYear(data,"manner");
+  var groupedByManner = getColumnCountByYear(data,"manner",[],[],[]);
 
-  var data2003 = cumulateJson(groupedByManner["2003"]);
-  var data2008 = cumulateJson(groupedByManner["2008"]);
-  var data2013 = cumulateJson(groupedByManner["2013"]);
+  var data2003 = cumulate(Object.keys(groupedByManner["2003"]).map(function(key) {
+    return groupedByManner["2003"][key];
+  }));
+  var data2008 = cumulate(Object.keys(groupedByManner["2008"]).map(function(key) {
+    return groupedByManner["2008"][key];
+  }));
+
+  var data2013 = cumulate(Object.keys(groupedByManner["2013"]).map(function(key) {
+    return groupedByManner["2013"][key];
+  }));
 
   var svg = d3.select("#mannerViz");
 
@@ -241,13 +265,37 @@ function createMannerView (data) {
   var max2008 = data2008[data2008.length-1].cumulative + data2008[data2008.length-1].count;
   var max2013 = data2013[data2013.length-1].cumulative + data2013[data2013.length-1].count;
 
-  var y = d3.scale.linear()
-  .domain([0,Math.max(max2003,max2008,max2013)])
-  .range([+svg.attr("height")-50,50]);
+  // var y = d3.scale.linear()
+  // .domain([0,Math.max(max2003,max2008,max2013)])
+  // .range([+svg.attr("height")-50,50]);
 
-  var height = d3.scale.linear()
-  .domain([0,Math.max(max2003,max2008,max2013)])
-  .range([0,+svg.attr("height")-100]);
+  var y2003 = d3.scale.linear()
+    .domain([0,max2003])
+    .range([+svg.attr("height")-50,50]);
+
+  var y2008 = d3.scale.linear()
+    .domain([0,max2008])
+   .range([+svg.attr("height")-50,50]);
+
+  var y2013 = d3.scale.linear()
+   .domain([0,max2013])
+   .range([+svg.attr("height")-50,50]);
+
+  // var height = d3.scale.linear()
+  //  .domain([0,Math.max(max2003,max2008,max2013)])
+  //  .range([0,+svg.attr("height")-100]);
+
+  var height2003 = d3.scale.linear()
+   .domain([0,max2003])
+   .range([0,+svg.attr("height")-100]);
+
+  var height2008 = d3.scale.linear()
+   .domain([0,max2008])
+   .range([0,+svg.attr("height")-100]);
+
+  var height2013 = d3.scale.linear()
+   .domain([0,max2013])
+   .range([0,+svg.attr("height")-100]);
 
 
   var yearList = [2003, 2008, 2013];
@@ -261,7 +309,7 @@ function createMannerView (data) {
     "Homicide": colorScale(2/7),
     "Pending Investigation": colorScale(3/7),
     "Could Not Determine": colorScale(4/7),
-    "Self-Inflicted": colorScale(5/7),
+    // "Self-Inflicted": colorScale(5/7),
     "Natural": colorScale(6/7),
     "Not Specified": colorScale(1)};
 
@@ -274,11 +322,11 @@ function createMannerView (data) {
 
   svg.append("text")
     .attr("class","charttitle")
-    .attr("x",+svg.attr("width")/2)
+    .attr("x",+svg.attr("width")*4/10)
     .attr("y",20)
     .attr("dy","0.3em")
     .style("text-anchor","middle")
-    .text("Manner of Death By Year");
+    .text("Percent Manner of Death By Year");
 
   var years = svg.selectAll("g")
   .data(yearList)
@@ -310,19 +358,59 @@ function createMannerView (data) {
       return xs[d.year] -barWidth/2;
     })
     .attr("y", function(d){
-      return y(d.cumulative) - height(d.count);
+      if (d.year === 2003) {
+        return y2003(d.cumulative) - height2003(d.count);
+      } else if (d.year === 2008) {
+        return y2008(d.cumulative) - height2008(d.count);
+      } else {
+        return y2013(d.cumulative) - height2013(d.count);
+      }
+      // return y(d.cumulative) - height(d.count);
     })
     .attr("width", barWidth)
     .attr("height", function(d) {
-      return height(d.count);
+      if (d.year === 2003) {
+        return height2003(d.count);
+      } else if (d.year === 2008) {
+        return height2008(d.count);
+      } else {
+        return height2013(d.count);
+      }
+      // return height(d.count);
     })
     .attr("fill", function(d){return mannerColors[numberToLabel.manner[d.columnValue]];})
+    .attr("stroke", "black")
+    .attr("stroke-width", 0)
     .attr("class", "mannerbar")
     .on("mouseover",function(d,i) { 
-    this.style.fill = "#772310"; 
+      this.style.fill = "#ff9933"; 
+      var mannerString = numberToLabel.manner[d.columnValue];
+      var legendBox = d3.select("#legendbox" + mannerString.replace(/\W/g, ''));
+      legendBox.attr("fill", "#ff9933"); 
     })
     .on("mouseout",function(d, i) { 
-        this.style.fill = mannerColors[numberToLabel.manner[d.columnValue]]; 
+      var mannerString = numberToLabel.manner[d.columnValue];
+      this.style.fill = mannerColors[mannerString]; 
+      var legendBox = d3.select("#legendbox" + mannerString.replace(/\W/g, ''));
+      legendBox.attr("fill", mannerColors[mannerString]); 
+    })
+    .on("click", function(d,i) {
+      var yearMannerVal = "y" + d.year + "m" + d.columnValue;
+      indexVal = GLOBAL.selected.yearManner.indexOf(yearMannerVal);
+      if (indexVal > -1){
+        GLOBAL.selected.yearManner.splice(indexVal, 1);
+
+        d3.select(this)
+          .attr("stroke-width",0);
+      } else {
+        GLOBAL.selected.yearManner.push("y" + d.year + "m" + d.columnValue);
+        
+        d3.select(this)
+          .attr("stroke-width",2);
+      }
+      updateRaceView(GLOBAL.data, GLOBAL.selected.yearManner, GLOBAL.selected.education);
+      updateEducationView(GLOBAL.data, GLOBAL.selected.yearManner, GLOBAL.selected.race);
+      console.log(GLOBAL.selected);
     })
     .attr("id", function(d,i){
       return d.id;
@@ -334,7 +422,7 @@ function createMannerView (data) {
   legend.append("text")
     .attr("class","legendtitle")
     .attr("x", +svg.attr("width")*4/5)
-    .attr("y", 50)
+    .attr("y", 40)
     .attr("dy","0.3em")
     .style("text-anchor","middle")
     .text("Legend");
@@ -343,37 +431,54 @@ function createMannerView (data) {
     .data(Object.keys(mannerColors))
     .enter()
     .append("g")
-    .attr("class", "legendentry");
+    .attr("class", "legendentry")
+    .attr("id", function (d){
+      return "legendentry" + d.replace(/\W/g, '');
+    });
 
   legendEntries.append("rect")
     .attr("class", "legendbox")
     .attr("x", +svg.attr("width")*4/5 - 30)
     .attr("y", function (d,i) {
-      return 65 + 20*i;})
-    .attr("width", 16)
-    .attr("height", 16)
+      return 50 + 10*i;})
+    .attr("width", 8)
+    .attr("height", 8)
     .attr("fill", function (d,i) {
       return mannerColors[d];
+    })
+    .attr("id", function (d){
+      return "legendbox" + d.replace(/\W/g, '');
     });
+
   legendEntries.append("text")
     .attr("class","legendlabel")
-    .attr("x", +svg.attr("width")*4/5 - 10)
+    .attr("x", +svg.attr("width")*4/5 - 20)
     .attr("y", function (d,i) {
-      return 65 + 20*i + 8;})
+      return 50 + 10*i + 4;})
     .attr("dy","0.3em")
     .style("text-anchor","start")
     .text(function(d,i){
-      return d});
+      return d})
+    .attr("id", function (d){
+      return "legnedlabel" + d.replace(/\W/g, '');
+    });
 }
 
-function updateMannerView (data) {
+function updateMannerView (data, sRace, sEdu) {
   // first, sort the data by 2013 numbers
   var groupedByManner = {};
-  groupedByManner = getColumnCountByYear(data,"manner");
+  groupedByManner = getColumnCountByYear(data,"manner",[],sRace,sEdu);
 
-  var data2003 = cumulateJson(groupedByManner["2003"]);
-  var data2008 = cumulateJson(groupedByManner["2008"]);
-  var data2013 = cumulateJson(groupedByManner["2013"]);
+    var data2003 = cumulate(Object.keys(groupedByManner["2003"]).map(function(key) {
+    return groupedByManner["2003"][key];
+  }));
+  var data2008 = cumulate(Object.keys(groupedByManner["2008"]).map(function(key) {
+    return groupedByManner["2008"][key];
+  }));
+
+  var data2013 = cumulate(Object.keys(groupedByManner["2013"]).map(function(key) {
+    return groupedByManner["2013"][key];
+  }));
 
   var svg = d3.select("#mannerViz");
 
@@ -381,13 +486,37 @@ function updateMannerView (data) {
   var max2008 = data2008[data2008.length-1].cumulative + data2008[data2008.length-1].count;
   var max2013 = data2013[data2013.length-1].cumulative + data2013[data2013.length-1].count;
 
-  var y = d3.scale.linear()
-  .domain([0,Math.max(max2003,max2008,max2013)])
-  .range([+svg.attr("height")-50,50]);
+  // var y = d3.scale.linear()
+  // .domain([0,Math.max(max2003,max2008,max2013)])
+  // .range([+svg.attr("height")-50,50]);
 
-  var height = d3.scale.linear()
-  .domain([0,Math.max(max2003,max2008,max2013)])
-  .range([0,+svg.attr("height")-100]);
+  var y2003 = d3.scale.linear()
+    .domain([0,max2003])
+    .range([+svg.attr("height")-50,50]);
+
+  var y2008 = d3.scale.linear()
+    .domain([0,max2008])
+   .range([+svg.attr("height")-50,50]);
+
+  var y2013 = d3.scale.linear()
+   .domain([0,max2013])
+   .range([+svg.attr("height")-50,50]);
+
+  // var height = d3.scale.linear()
+  // .domain([0,Math.max(max2003,max2008,max2013)])
+  // .range([0,+svg.attr("height")-100]);
+
+  var height2003 = d3.scale.linear()
+   .domain([0,max2003])
+   .range([0,+svg.attr("height")-100]);
+
+  var height2008 = d3.scale.linear()
+   .domain([0,max2008])
+   .range([0,+svg.attr("height")-100]);
+
+  var height2013 = d3.scale.linear()
+   .domain([0,max2013])
+   .range([0,+svg.attr("height")-100]);
 
   //Do this by year -- doing them all at once got 
   //really confusing. 
@@ -395,48 +524,48 @@ function updateMannerView (data) {
     .selectAll(".mannerbar")
     .data(data2003, function(d) {return "mannerBar" + d.year + d.columnValue;})
     .transition()
-    .duration(2000)
+    .duration(1000)
     .attr("y", function(d){
-      return y(d.cumulative) - height(d.count);
+      return y2003(d.cumulative) - height2003(d.count);
     })
     .attr("height", function(d) {
-      return height(d.count);
+      return height2003(d.count);
     });
 
   svg.selectAll(".year2008")
     .selectAll(".mannerbar")
     .data(data2008, function(d) {return "mannerBar" + d.year + d.columnValue;})
     .transition()
-    .duration(2000)
+    .duration(1000)
     .attr("y", function(d){
-      return y(d.cumulative) - height(d.count);
+      return y2008(d.cumulative) - height2008(d.count);
     })
     .attr("height", function(d) {
-      return height(d.count);
+      return height2008(d.count);
     });
 
   svg.selectAll(".year2013")
     .selectAll(".mannerbar")
     .data(data2013, function(d) {return "mannerBar" + d.year + d.columnValue;})
     .transition()
-    .duration(2000)
+    .duration(1000)
     .attr("y", function(d){
-      return y(d.cumulative) - height(d.count);
+      return y2013(d.cumulative) - height2013(d.count);
     })
     .attr("height", function(d) {
-      return height(d.count);
+      return height2013(d.count);
     });
 }
 
 function createRaceView (data) {
     
   // first, sort the data by 2013 numbers
-  var groupedByRace = getCountByColumn(data,"race");
+  var groupedByRace = getCountByColumn(data,"race",[],[],[]);
 
   var totalcount = groupedByRace["total"];
   delete groupedByRace["total"]
 
-  raceData = cumulateArray(Object.keys(groupedByRace).map(function(raceKey) {
+  raceData = cumulate(Object.keys(groupedByRace).map(function(raceKey) {
     return {race: raceKey, count: groupedByRace[raceKey]};
   }));
 
@@ -496,11 +625,34 @@ function createRaceView (data) {
     .attr("class", "raceslice")
     .attr("fill", function(d,i){
       return raceColors[numberToLabel.race[d.race]];})
+    .attr("stroke", "black")
+    .attr("stroke-width", 0)
     .on("mouseover",function(d,i) { 
-      this.style.fill = "#772310"; 
+      this.style.fill = "#ff9933"; 
+      var raceString = numberToLabel.race[d.race];
+      var legendBox = d3.select("#legendbox" + raceString.replace(/\W/g, ''));
+      legendBox.attr("fill", "#ff9933"); 
     })
     .on("mouseout",function(d, i) { 
-        this.style.fill = raceColors[numberToLabel.race[d.race]];
+        var raceString = numberToLabel.race[d.race];
+        this.style.fill = raceColors[raceString];
+        var legendBox = d3.select("#legendbox" + raceString.replace(/\W/g, ''));
+        legendBox.attr("fill", raceColors[raceString]); 
+    })
+    .on("click", function(d,i) {
+      indexVal = GLOBAL.selected.race.indexOf(d.race);
+      if (indexVal > -1){
+        GLOBAL.selected.race.splice(indexVal, 1);
+        d3.select(this)
+          .attr("stroke-width",0);
+      } else {
+        GLOBAL.selected.race.push(d.race);
+        d3.select(this)
+          .attr("stroke-width",2);
+      }
+      updateMannerView(GLOBAL.data, GLOBAL.selected.race, GLOBAL.selected.education);
+      updateEducationView(GLOBAL.data, GLOBAL.selected.yearManner, GLOBAL.selected.race);
+      console.log(GLOBAL.selected);
     });
 
   var legend = svg.append("g")
@@ -509,7 +661,7 @@ function createRaceView (data) {
   legend.append("text")
     .attr("class","legendtitle")
     .attr("x", +svg.attr("width")*4/5)
-    .attr("y", 50)
+    .attr("y", 40)
     .attr("dy","0.3em")
     .style("text-anchor","middle")
     .text("Legend");
@@ -518,39 +670,48 @@ function createRaceView (data) {
     .data(Object.keys(raceColors))
     .enter()
     .append("g")
-    .attr("class", "legendentry");
+    .attr("class", "legendentry")
+    .attr("id", function (d){
+      return "legendentry" + d.replace(/\W/g, '');
+    });
 
   legendEntries.append("rect")
     .attr("class", "legendbox")
     .attr("x", +svg.attr("width")*4/5 - 30)
     .attr("y", function (d,i) {
-      return 65 + 20*i;})
-    .attr("width", 16)
-    .attr("height", 16)
+      return 50 + 10*i;})
+    .attr("width", 8)
+    .attr("height", 8)
     .attr("fill", function (d,i) {
       return raceColors[d];
+    })
+    .attr("id", function (d){
+      return "legendbox" + d.replace(/\W/g, '');
     });
 
   legendEntries.append("text")
     .attr("class","legendlabel")
-    .attr("x", +svg.attr("width")*4/5 - 10)
+    .attr("x", +svg.attr("width")*4/5 - 20)
     .attr("y", function (d,i) {
-      return 65 + 20*i + 8;})
+      return 50 + 10*i + 4;})
     .attr("dy","0.3em")
     .style("text-anchor","start")
     .text(function(d,i){
-      return d});
+      return d})
+    .attr("id", function (d){
+      return "legnedlabel" + d.replace(/\W/g, '');
+    });
 }
 
-function updateRaceView (data) {
+function updateRaceView (data, sYearManner, sEdu) {
     
   // first, sort the data by 2013 numbers
-  var groupedByRace = getCountByColumn(data,"race");
+  var groupedByRace = getCountByColumn(data,"race",sYearManner,[],sEdu);
 
   var totalcount = groupedByRace["total"];
   delete groupedByRace["total"]
 
-  raceData = cumulateArray(Object.keys(groupedByRace).map(function(raceKey) {
+  raceData = cumulate(Object.keys(groupedByRace).map(function(raceKey) {
     return {race: raceKey, count: groupedByRace[raceKey]};
   }));
 
@@ -588,7 +749,7 @@ function updateRaceView (data) {
       
     })
     .transition()
-    .duration(2000)
+    .duration(1000)
     .attrTween("d", function(d,i) {
       var interpolateEnd = d3.interpolate(d.endAngle,angle(d.count + d.cumulative));
       var interpolateStart = d3.interpolate(d.startAngle,angle(d.cumulative));
@@ -603,17 +764,14 @@ function updateRaceView (data) {
 function createEducationView (data) {
     
   // first, sort the data by 2013 numbers
-  var groupedByEducation = getCountByColumn(data,"education");
+  var groupedByEducation = getCountByColumn(data,"education",[],[],[]);
 
   var totalcount = groupedByEducation["total"];
   delete groupedByEducation["total"]
 
-  console.log(groupedByEducation);
-  educationData = cumulateArray(Object.keys(groupedByEducation).map(function(educationKey) {
+  educationData = cumulate(Object.keys(groupedByEducation).map(function(educationKey) {
     return {education: educationKey, count: groupedByEducation[educationKey]};
   }));
-
-  console.log(educationData);
 
   var svg = d3.select("#educationViz");
   
@@ -686,11 +844,37 @@ function createEducationView (data) {
     .attr("transform",  "translate(" + cx + "," + cy + ")")
     .attr("class", "educationslice")
     .attr("fill", function(d,i){return educationColors[numberToLabel.education[d.education]];})
+    .attr("stroke", "black")
+    .attr("stroke-width", 0)
     .on("mouseover",function(d,i) { 
-    this.style.fill = "#772310"; 
+    this.style.fill = "#ff9933"; 
+    var educationString = numberToLabel.education[d.education];
+    var legendBox = d3.select("#legendbox" + educationString.replace(/\W/g, ''));
+      legendBox.attr("fill", "#ff9933"); 
     })
     .on("mouseout",function(d, i) { 
-        this.style.fill = educationColors[numberToLabel.education[d.education]];
+        var educationString = numberToLabel.education[d.education];
+        this.style.fill = educationColors[educationString];
+        var legendBox = d3.select("#legendbox" + educationString.replace(/\W/g, ''));
+        legendBox.attr("fill", educationColors[educationString]);
+    })
+    .on("click", function(d,i) {
+      indexVal = GLOBAL.selected.education.indexOf(d.education);
+      if (indexVal > -1){
+        GLOBAL.selected.education.splice(indexVal, 1);
+
+        d3.select(this)
+          .attr("stroke-width",0);
+
+      } else {
+        GLOBAL.selected.education.push(d.education);
+
+        d3.select(this)
+          .attr("stroke-width",2);
+      }
+      updateMannerView(GLOBAL.data, GLOBAL.selected.race, GLOBAL.selected.education);
+      updateRaceView(GLOBAL.data, GLOBAL.selected.yearManner, GLOBAL.selected.education);
+      console.log(GLOBAL.selected);
     });
 
   var legend = svg.append("g")
@@ -699,7 +883,7 @@ function createEducationView (data) {
   legend.append("text")
     .attr("class","legendtitle")
     .attr("x", +svg.attr("width")*4/5)
-    .attr("y", 50)
+    .attr("y", 40)
     .attr("dy","0.3em")
     .style("text-anchor","middle")
     .text("Legend");
@@ -708,39 +892,48 @@ function createEducationView (data) {
     .data(Object.keys(educationColors))
     .enter()
     .append("g")
-    .attr("class", "legendentry");
+    .attr("class", "legendentry")
+    .attr("id", function (d){
+      return "legendentry" + d.replace(/\W/g, '');
+    });
 
   legendEntries.append("rect")
     .attr("class", "legendbox")
     .attr("x", +svg.attr("width")*4/5 - 30)
     .attr("y", function (d,i) {
-      return 65 + 20*i;})
-    .attr("width", 16)
-    .attr("height", 16)
+      return 50 + 10*i;})
+    .attr("width", 8)
+    .attr("height", 8)
     .attr("fill", function (d,i) {
       return educationColors[d];
+    })
+    .attr("id", function (d){
+      return "legendbox" + d.replace(/\W/g, '');
     });
 
   legendEntries.append("text")
     .attr("class","legendlabel")
-    .attr("x", +svg.attr("width")*4/5 - 10)
+    .attr("x", +svg.attr("width")*4/5 - 20)
     .attr("y", function (d,i) {
-      return 65 + 20*i + 8;})
+      return 50 + 10*i + 4;})
     .attr("dy","0.3em")
     .style("text-anchor","start")
     .text(function(d,i){
-      return d});
+      return d})
+    .attr("id", function (d){
+      return "legnedlabel" + d.replace(/\W/g, '');
+    });
 }
 
-function updateEducationView (data) {
+function updateEducationView (data, sYearManner, sRace) {
     
   // first, sort the data by 2013 numbers
-  var groupedByEducation = getCountByColumn(data,"education");
+  var groupedByEducation = getCountByColumn(data,"education",sYearManner, sRace,[]);
 
   var totalcount = groupedByEducation["total"];
   delete groupedByEducation["total"]
 
-  educationData = cumulateArray(Object.keys(groupedByEducation).map(function(educationKey) {
+  educationData = cumulate(Object.keys(groupedByEducation).map(function(educationKey) {
     return {education: educationKey, count: groupedByEducation[educationKey]};
   }));
 
@@ -778,7 +971,7 @@ function updateEducationView (data) {
       
     })
     .transition()
-    .duration(2000)
+    .duration(1000)
     .attrTween("d", function(d,i) {
       var interpolateEnd = d3.interpolate(d.endAngle,angle(d.count + d.cumulative));
       var interpolateStart = d3.interpolate(d.startAngle,angle(d.cumulative));
