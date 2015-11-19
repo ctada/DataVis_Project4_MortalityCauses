@@ -32,18 +32,7 @@
       }
       .legendlabel{
           font-size: 6px;
-      }
-      .userslice { 
-           stroke: white;
-           stroke-width: 2px;
-           fill: #3366FF;
-      }  
-
-      .backgroundcircle { 
-           stroke: white;
-           stroke-width: 2px;
-           fill: #999999;
-      }
+      } 
     </style>
 
   </head>
@@ -184,6 +173,12 @@ function getCountByColumn(data, column, sYearManner, sRace, sEdu){
   var columnData = {total: 0};
 
   data.forEach(function(row) {
+    if (row.race === "9" || row.race === ""){
+      row.race = "99";
+    }
+    if (row.education === ""){
+      row.education = "99";
+    }
     if (checkYearManner && sYearManner.indexOf(("y" + row.year + "m" + row.manner)) === -1) {
       return;
     } else if (checkRace && sRace.indexOf(row.race) === -1){
@@ -193,9 +188,6 @@ function getCountByColumn(data, column, sYearManner, sRace, sEdu){
     }
 
     if (column in row) {
-      if (row[column] === "9" || row[column] === ""){
-        row[column] = "99";
-      }
       if (row[column] in columnData){
         columnData[row[column]] += row.count;
       } else {
@@ -208,13 +200,11 @@ function getCountByColumn(data, column, sYearManner, sRace, sEdu){
 }
 
 function getColumnCountByYear(data, column, sYearManner, sRace, sEdu){
-  
   var checkYearManner = sYearManner.length > 0 ? 1 : 0;
   var checkRace = sRace.length > 0 ? 1 : 0;
   var checkEdu = sEdu.length > 0 ? 1 : 0;
 
   var columnData = {};
-
   data.forEach(function(row){
     if (row.manner === ""){
       row.manner = "Blank";
@@ -263,7 +253,6 @@ function cumulate(data){
 }
 
 function createMannerView (data) {
-    
   // first, sort the data by 2013 numbers
 
   var groupedByManner = getColumnCountByYear(data,"manner",[],[],[]);
@@ -278,7 +267,6 @@ function createMannerView (data) {
   var data2013 = cumulate(Object.keys(groupedByManner["2013"]).map(function(key) {
     return groupedByManner["2013"][key];
   }));
-
   var svg = d3.select("#mannerViz");
 
   var max2003 = data2003[data2003.length-1].cumulative + data2003[data2003.length-1].count;
@@ -1020,52 +1008,6 @@ function getData (url, f) {
              f(data["vizdata"]);
          }
          });
-}
-
-/*
- * Function for getting the total from the
- * data for a given manner and a given year
- * (returns 0 if there's no such entry in
- * the data)
- * 
- */
-function getCountByColumn(data, column){
-  columnData = {total: 0};
-  data.forEach(function(row) {
-    if (column in row) {
-      if (row[column] in columnData){
-        columnData[row[column]] += row.count;
-      } else {
-        columnData[row[column]] = row.count;
-      }
-      columnData.total += row.count
-    }
-  })
-  return columnData;
-}
-function getColumnCountByYear(data, column){
-  columnData = {};
-  data.forEach(function(row){
-    if (column in row) {
-      if (row.year in columnData) {
-        columnData[row.year].push({
-          year: row.year,
-          column: column,
-          columnValue: row[column],
-          count: row.count, 
-          id: "mannerBar" + row.year + row[column]});
-      } else {
-        columnData[row.year] = [];
-        columnData[row.year].push({
-          year: row.year,
-          column: column,
-          columnValue: row[column],
-          count: row.count,
-          id: "mannerBar" + row.year + row[column]});
-      }
-    }
-  })
-  return columnData;
 }
 
 function createPlaceView(data){
