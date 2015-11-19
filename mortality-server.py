@@ -58,6 +58,7 @@ def pullVizData():
                             mortality.Education != '' AND 
                             mortality.Place_Of_Death != '9' AND
                             mortality.Activity_Code != '' AND
+                            mortality.Activity_Code != '9' AND
                             mortality.Manner_Of_Death !=''  
                         GROUP BY mortality.year, 
                             mortality.Education,

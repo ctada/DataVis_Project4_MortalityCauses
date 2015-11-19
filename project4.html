@@ -57,7 +57,7 @@
       </svg>
       <svg id="raceViz" height="250" width="400" style="border: 1px solid grey;">
       </svg>
-      <svg id="educationViz" height="250" width="400" style="border: 1px solid grey;">
+      <svg id="educationViz" height="250" width="400" style="border: 1px solid grey;"></svg>
       <svg id="viz_place" height="500" width="800" style="border: 1px solid grey;"></svg>
       <svg id="viz_activity" height="500" width="800" style="border: 1px solid grey;"></svg>
     </div>
@@ -132,8 +132,8 @@ function run () {
     var svgs = d3.select("svg");
     svgs.append("text")
 	.attr("id","loading")
-	.attr("x",+svg.attr("width")/2)
-	.attr("y",+svg.attr("height")/2)
+	.attr("x",+svgs.attr("width")/2)
+	.attr("y",+svgs.attr("height")/2)
 	.attr("dy","0.35em")
 	.style("text-anchor","middle")
 	.text("loading data...");
@@ -1071,8 +1071,8 @@ function createPlaceView(data){
         .attr('xlink:href', function(d){console.log(d);return 'project4_icons-0'+d+'.png';})
         .attr('height', function(d){return +places[d];})
         .attr('width', function(d){return +places[d];})
-        .attr('x', function(d,i){return i*chartWidth/place_indices.length + margin;})
-        .attr('y', function(d,i){return ((i%2)+.5)*(chartHeight/2) + margin + padding;});
+        .attr('x', function(d,i){return (i+.5)*chartWidth/place_indices.length -.5*+places[d] + margin;})
+        .attr('y', function(d,i){return (i%2 +.5)*(chartHeight/2) - .5*+places[d] + margin + padding;});
 
     g.append("text")
         .text(function(d){return PLACE[d];})
@@ -1122,7 +1122,7 @@ function createActivityView(data){
     g.append("circle")
         .attr("cx", function(d,i){return (i+.5)*chartWidth/act_indices.length + margin;})
         .attr("cy", function(d,i){return ((i%2) + .5)*(chartHeight/2) + margin + padding;})
-        .attr("r", function(d){console.log(ACTIIVITY[d],activities[d]); return +activities[d];})
+        .attr("r", function(d){console.log(ACTIVITY[d],activities[d]); return +activities[d];})
         .style("fill", "red")
         .style("opacity",".3");
 
