@@ -82,7 +82,7 @@ var numberToLabel = {
     "3": "Homicide",
     "4": "Pending Investigation",
     "5": "Could Not Determine",
-    "6": "Self-Inflicted",
+    // "6": "Self-Inflicted",
     "7": "Natural",
     "Blank": "Not Specified"
   },
@@ -309,7 +309,7 @@ function createMannerView (data) {
     "Homicide": colorScale(2/7),
     "Pending Investigation": colorScale(3/7),
     "Could Not Determine": colorScale(4/7),
-    "Self-Inflicted": colorScale(5/7),
+    // "Self-Inflicted": colorScale(5/7),
     "Natural": colorScale(6/7),
     "Not Specified": colorScale(1)};
 
@@ -384,9 +384,15 @@ function createMannerView (data) {
     .attr("class", "mannerbar")
     .on("mouseover",function(d,i) { 
       this.style.fill = "#ff9933"; 
+      var mannerString = numberToLabel.manner[d.columnValue];
+      var legendBox = d3.select("#legendbox" + mannerString.replace(/\W/g, ''));
+      legendBox.attr("fill", "#ff9933"); 
     })
     .on("mouseout",function(d, i) { 
-      this.style.fill = mannerColors[numberToLabel.manner[d.columnValue]]; 
+      var mannerString = numberToLabel.manner[d.columnValue];
+      this.style.fill = mannerColors[mannerString]; 
+      var legendBox = d3.select("#legendbox" + mannerString.replace(/\W/g, ''));
+      legendBox.attr("fill", mannerColors[mannerString]); 
     })
     .on("click", function(d,i) {
       var yearMannerVal = "y" + d.year + "m" + d.columnValue;
@@ -426,7 +432,10 @@ function createMannerView (data) {
     .data(Object.keys(mannerColors))
     .enter()
     .append("g")
-    .attr("class", "legendentry");
+    .attr("class", "legendentry")
+    .attr("id", function (d){
+      return "legendentry" + d.replace(/\W/g, '');
+    });;
 
   legendEntries.append("rect")
     .attr("class", "legendbox")
@@ -437,6 +446,9 @@ function createMannerView (data) {
     .attr("height", 8)
     .attr("fill", function (d,i) {
       return mannerColors[d];
+    })
+    .attr("id", function (d){
+      return "legendbox" + d.replace(/\W/g, '');
     });
 
   legendEntries.append("text")
@@ -447,7 +459,10 @@ function createMannerView (data) {
     .attr("dy","0.3em")
     .style("text-anchor","start")
     .text(function(d,i){
-      return d});
+      return d})
+    .attr("id", function (d){
+      return "legnedlabel" + d.replace(/\W/g, '');
+    });;
 }
 
 function updateMannerView (data, sRace, sEdu) {
