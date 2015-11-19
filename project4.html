@@ -155,20 +155,27 @@ function createPlaceView(data){
     .append("g");
 
    
-    g.selectAll("g")
-        .data(place_indices)
-        .enter()
-        .append('image')
-        .attr('xlink:href', function(d){return 'project4_icons-0'+d+'.png';})
-        .attr('height', function(d){return +places[d]/1000;})
-        .attr('width', function(d){return +places[d]/1000;})
-        .attr('x', function(d,i){return (i+.5)*chartWidth/place_indices.length + margin;})
+    // g.selectAll("g")
+    //     .data(place_indices)
+    //     .enter()
+    g.append('image')
+        .attr('xlink:href', function(d){console.log(d);return 'project4_icons-0'+d+'.png';})
+        .attr('height', function(d){return +places[d];})
+        .attr('width', function(d){return +places[d];})
+        .attr('x', function(d,i){return i*chartWidth/place_indices.length + margin;})
         .attr('y', function(d,i){return (i%2)*(chartHeight/2) + margin + padding;});
 
-    g.selectAll("text")
-        .data(place_indices)
-        .enter()
-        .append("text")
+    g.append("circle")
+        .attr("cx", function(d,i){return (i+.5)*chartWidth/place_indices.length + margin;})
+        .attr("cy", function(d,i){return ((i%2) + .5)*(chartHeight/2) + margin + padding;})
+        .attr("r", function(d){console.log(PLACE[d],places[d]); return +places[d];})
+        .style("fill", "red")
+        .style("opacity",".2");
+
+    // g.selectAll("text")
+    //     .data(place_indices)
+    //     .enter()
+    g.append("text")
         .text(function(d){return PLACE[d];})
         .attr("x", function(d,i){return (i+.5)*chartWidth/place_indices.length + margin;})
         .attr("y", function(d,i){return (i%2)*(chartHeight/2) + margin;})        
@@ -176,7 +183,7 @@ function createPlaceView(data){
         .style("font-family","sans-serif")
         .style("font-weight","bold")
         .style("font-size","16px")
-        .style("fill", "#669999");;
+        .style("fill", "#669999");
    
 }
 function createActivityView(data){
@@ -193,9 +200,9 @@ function createActivityView(data){
 
     var act_indices= d3.keys(activities);
     act_indices.pop();
-    
+
     var g = svg.selectAll("g")
-    .data(activities)
+    .data(act_indices)
     .enter()
     .append("g");
 
@@ -210,19 +217,17 @@ function createActivityView(data){
     //     .attr('x', function(d,i){return (i+.5)*chartWidth/act_indices.length + margin;})
     //     .attr('y', function(d,i){return (i%2 +1)*(chartHeight/2) + margin + padding;});
 
-    g.selectAll("circle")
-        .data(act_indices)
-        .enter()
-        .append("circle")
+    // g.selectAll("circle")
+    //     .data(act_indices)
+    //     .enter()
+    g.append("circle")
         .attr("cx", function(d,i){return (i+.5)*chartWidth/act_indices.length + margin;})
-        .attr("cy", function(d,i){return (i%2 + .5)*(chartHeight/2) + margin + padding;})
-        .attr("r", function(d){return +activities[d]/1000;})
-        .style("fill", "red");
+        .attr("cy", function(d,i){return ((i%2) + .5)*(chartHeight/2) + margin + padding;})
+        .attr("r", function(d){console.log(d,activities[d]); return +activities[d];})
+        .style("fill", "red")
+        .style("opacity",".3");
 
-    g.selectAll("text")
-        .data(act_indices)
-        .enter()
-        .append("text")
+    g.append("text")
         .text(function(d){return ACTIVITY[d];})
         .attr("x", function(d,i){return (i+.5)*chartWidth/act_indices.length + margin;})
         .attr("y", function(d,i){return (i%2)*(chartHeight/2) + margin;})        
@@ -230,8 +235,8 @@ function createActivityView(data){
         .style("font-family","sans-serif")
         .style("font-weight","bold")
         .style("font-size","12px")
-        .style("fill", "#669999");;
-   
+        .style("fill", "#669999");
+          
 }
 
 PLACE = {
