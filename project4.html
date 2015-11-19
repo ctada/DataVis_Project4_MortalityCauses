@@ -32,18 +32,7 @@
       }
       .legendlabel{
           font-size: 6px;
-      }
-      .userslice { 
-           stroke: white;
-           stroke-width: 2px;
-           fill: #3366FF;
-      }  
-
-      .backgroundcircle { 
-           stroke: white;
-           stroke-width: 2px;
-           fill: #999999;
-      }
+      } 
     </style>
 
   </head>
@@ -57,7 +46,7 @@
       </svg>
       <svg id="raceViz" height="250" width="400" style="border: 1px solid grey;">
       </svg>
-      <svg id="educationViz" height="250" width="400" style="border: 1px solid grey;"> </svg>
+      <svg id="educationViz" height="250" width="400" style="border: 1px solid grey;"></svg>
       <svg id="viz_place" height="500" width="800" style="border: 1px solid grey;"></svg>
       <svg id="viz_activity" height="500" width="800" style="border: 1px solid grey;"></svg>
     </div>
@@ -163,10 +152,12 @@ function getCountByColumn(data, column, sYearManner, sRace, sEdu){
   var columnData = {total: 0};
 
   data.forEach(function(row) {
-    if (row[column] === "9" || row[column] === ""){
-        row[column] = "99";
+    if (row.race === "9" || row.race === ""){
+      row.race = "99";
     }
-
+    if (row.education === ""){
+      row.education = "99";
+    }
     if (checkYearManner && sYearManner.indexOf(("y" + row.year + "m" + row.manner)) === -1) {
       return;
     } else if (checkRace && sRace.indexOf(row.race) === -1){
@@ -188,13 +179,11 @@ function getCountByColumn(data, column, sYearManner, sRace, sEdu){
 }
 
 function getColumnCountByYear(data, column, sYearManner, sRace, sEdu){
-  
   var checkYearManner = sYearManner.length > 0 ? 1 : 0;
   var checkRace = sRace.length > 0 ? 1 : 0;
   var checkEdu = sEdu.length > 0 ? 1 : 0;
 
   var columnData = {};
-
   data.forEach(function(row){
     if (row.manner === ""){
       row.manner = "Blank";
@@ -207,7 +196,6 @@ function getColumnCountByYear(data, column, sYearManner, sRace, sEdu){
       return;
     }
     if (row.year in columnData) {
-      console.log(row);
       if (row[column] in columnData[row.year]){
         columnData[row.year][row[column]].count += row.count;
       }
@@ -229,7 +217,6 @@ function getColumnCountByYear(data, column, sYearManner, sRace, sEdu){
           id: "mannerBar" + row.year + row[column]};
     }
   })
-  console.log(columnData)
   return columnData;
 }
 
@@ -259,7 +246,6 @@ function createMannerView (data) {
   var data2013 = cumulate(Object.keys(groupedByManner["2013"]).map(function(key) {
     return groupedByManner["2013"][key];
   }));
-  console.log("2003",data2003);
   var svg = d3.select("#mannerViz");
 
   var max2003 = data2003[data2003.length-1].cumulative + data2003[data2003.length-1].count;
@@ -1003,52 +989,6 @@ function getData (url, f) {
          });
 }
 
-/*
- * Function for getting the total from the
- * data for a given manner and a given year
- * (returns 0 if there's no such entry in
- * the data)
- * 
- */
-function getCountByColumn(data, column){
-  columnData = {total: 0};
-  data.forEach(function(row) {
-    if (column in row) {
-      if (row[column] in columnData){
-        columnData[row[column]] += row.count;
-      } else {
-        columnData[row[column]] = row.count;
-      }
-      columnData.total += row.count
-    }
-  })
-  return columnData;
-}
-function getColumnCountByYear(data, column){
-  columnData = {};
-  data.forEach(function(row){
-    if (column in row) {
-      if (row.year in columnData) {
-        columnData[row.year].push({
-          year: row.year,
-          column: column,
-          columnValue: row[column],
-          count: row.count, 
-          id: "mannerBar" + row.year + row[column]});
-      } else {
-        columnData[row.year] = [];
-        columnData[row.year].push({
-          year: row.year,
-          column: column,
-          columnValue: row[column],
-          count: row.count,
-          id: "mannerBar" + row.year + row[column]});
-      }
-    }
-  })
-  return columnData;
-}
-
 function createPlaceView(data){
     var svg = d3.select("#viz_place");
     var height = svg.attr("height");
@@ -1070,11 +1010,11 @@ function createPlaceView(data){
     .append("g");
 
     g.append('image')
-        .attr('xlink:href', function(d){console.log(d);return 'project4_icons-0'+d+'.png';})
+        .attr('xlink:href', function(d){return 'project4_icons-0'+d+'.png';})
         .attr('height', function(d){return +places[d];})
         .attr('width', function(d){return +places[d];})
-        .attr('x', function(d,i){return i*chartWidth/place_indices.length + margin;})
-        .attr('y', function(d,i){return ((i%2)+.5)*(chartHeight/2) + margin + padding;});
+        .attr('x', function(d,i){return (i+.5)*chartWidth/place_indices.length -.5*+places[d] + margin;})
+        .attr('y', function(d,i){return (i%2 +.5)*(chartHeight/2) - .5*+places[d] + margin + padding;});
 
     g.append("text")
         .text(function(d){return PLACE[d];})
@@ -1124,7 +1064,7 @@ function createActivityView(data){
     g.append("circle")
         .attr("cx", function(d,i){return (i+.5)*chartWidth/act_indices.length + margin;})
         .attr("cy", function(d,i){return ((i%2) + .5)*(chartHeight/2) + margin + padding;})
-        .attr("r", function(d){console.log(ACTIVITY[d],activities[d]); return +activities[d];})
+        .attr("r", function(d){return +activities[d];})
         .style("fill", "red")
         .style("opacity",".3");
 
