@@ -406,7 +406,6 @@ function createMannerView (data) {
         GLOBAL.selected.yearManner.push("y" + d.year + "m" + d.columnValue);
         
         d3.select(this)
-          .attr("stroke-alignment", "inner")
           .attr("stroke-width",2);
       }
       updateRaceView(GLOBAL.data, GLOBAL.selected.yearManner, GLOBAL.selected.education);
@@ -435,7 +434,7 @@ function createMannerView (data) {
     .attr("class", "legendentry")
     .attr("id", function (d){
       return "legendentry" + d.replace(/\W/g, '');
-    });;
+    });
 
   legendEntries.append("rect")
     .attr("class", "legendbox")
@@ -462,7 +461,7 @@ function createMannerView (data) {
       return d})
     .attr("id", function (d){
       return "legnedlabel" + d.replace(/\W/g, '');
-    });;
+    });
 }
 
 function updateMannerView (data, sRace, sEdu) {
@@ -630,9 +629,15 @@ function createRaceView (data) {
     .attr("stroke-width", 0)
     .on("mouseover",function(d,i) { 
       this.style.fill = "#ff9933"; 
+      var raceString = numberToLabel.race[d.race];
+      var legendBox = d3.select("#legendbox" + raceString.replace(/\W/g, ''));
+      legendBox.attr("fill", "#ff9933"); 
     })
     .on("mouseout",function(d, i) { 
-        this.style.fill = raceColors[numberToLabel.race[d.race]];
+        var raceString = numberToLabel.race[d.race];
+        this.style.fill = raceColors[raceString];
+        var legendBox = d3.select("#legendbox" + raceString.replace(/\W/g, ''));
+        legendBox.attr("fill", raceColors[raceString]); 
     })
     .on("click", function(d,i) {
       indexVal = GLOBAL.selected.race.indexOf(d.race);
@@ -665,7 +670,10 @@ function createRaceView (data) {
     .data(Object.keys(raceColors))
     .enter()
     .append("g")
-    .attr("class", "legendentry");
+    .attr("class", "legendentry")
+    .attr("id", function (d){
+      return "legendentry" + d.replace(/\W/g, '');
+    });
 
   legendEntries.append("rect")
     .attr("class", "legendbox")
@@ -676,6 +684,9 @@ function createRaceView (data) {
     .attr("height", 8)
     .attr("fill", function (d,i) {
       return raceColors[d];
+    })
+    .attr("id", function (d){
+      return "legendbox" + d.replace(/\W/g, '');
     });
 
   legendEntries.append("text")
@@ -686,7 +697,10 @@ function createRaceView (data) {
     .attr("dy","0.3em")
     .style("text-anchor","start")
     .text(function(d,i){
-      return d});
+      return d})
+    .attr("id", function (d){
+      return "legnedlabel" + d.replace(/\W/g, '');
+    });
 }
 
 function updateRaceView (data, sYearManner, sEdu) {
@@ -834,9 +848,15 @@ function createEducationView (data) {
     .attr("stroke-width", 0)
     .on("mouseover",function(d,i) { 
     this.style.fill = "#ff9933"; 
+    var educationString = numberToLabel.education[d.education];
+    var legendBox = d3.select("#legendbox" + educationString.replace(/\W/g, ''));
+      legendBox.attr("fill", "#ff9933"); 
     })
     .on("mouseout",function(d, i) { 
-        this.style.fill = educationColors[numberToLabel.education[d.education]];
+        var educationString = numberToLabel.education[d.education];
+        this.style.fill = educationColors[educationString];
+        var legendBox = d3.select("#legendbox" + educationString.replace(/\W/g, ''));
+        legendBox.attr("fill", educationColors[educationString]);
     })
     .on("click", function(d,i) {
       indexVal = GLOBAL.selected.education.indexOf(d.education);
@@ -872,7 +892,10 @@ function createEducationView (data) {
     .data(Object.keys(educationColors))
     .enter()
     .append("g")
-    .attr("class", "legendentry");
+    .attr("class", "legendentry")
+    .attr("id", function (d){
+      return "legendentry" + d.replace(/\W/g, '');
+    });
 
   legendEntries.append("rect")
     .attr("class", "legendbox")
@@ -883,6 +906,9 @@ function createEducationView (data) {
     .attr("height", 8)
     .attr("fill", function (d,i) {
       return educationColors[d];
+    })
+    .attr("id", function (d){
+      return "legendbox" + d.replace(/\W/g, '');
     });
 
   legendEntries.append("text")
@@ -893,7 +919,10 @@ function createEducationView (data) {
     .attr("dy","0.3em")
     .style("text-anchor","start")
     .text(function(d,i){
-      return d});
+      return d})
+    .attr("id", function (d){
+      return "legnedlabel" + d.replace(/\W/g, '');
+    });
 }
 
 function updateEducationView (data, sYearManner, sRace) {
