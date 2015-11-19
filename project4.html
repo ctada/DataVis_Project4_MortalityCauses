@@ -57,7 +57,7 @@
       </svg>
       <svg id="raceViz" height="250" width="400" style="border: 1px solid grey;">
       </svg>
-      <svg id="educationViz" height="250" width="400" style="border: 1px solid grey;">
+      <svg id="educationViz" height="250" width="400" style="border: 1px solid grey;"> </svg>
       <svg id="viz_place" height="500" width="800" style="border: 1px solid grey;"></svg>
       <svg id="viz_activity" height="500" width="800" style="border: 1px solid grey;"></svg>
     </div>
@@ -132,8 +132,8 @@ function run () {
     var svgs = d3.select("svg");
     svgs.append("text")
 	.attr("id","loading")
-	.attr("x",+svg.attr("width")/2)
-	.attr("y",+svg.attr("height")/2)
+	.attr("x",+svgs.attr("width")/2)
+	.attr("y",+svgs.attr("height")/2)
 	.attr("dy","0.35em")
 	.style("text-anchor","middle")
 	.text("loading data...");
@@ -163,6 +163,10 @@ function getCountByColumn(data, column, sYearManner, sRace, sEdu){
   var columnData = {total: 0};
 
   data.forEach(function(row) {
+    if (row[column] === "9" || row[column] === ""){
+        row[column] = "99";
+    }
+
     if (checkYearManner && sYearManner.indexOf(("y" + row.year + "m" + row.manner)) === -1) {
       return;
     } else if (checkRace && sRace.indexOf(row.race) === -1){
@@ -172,9 +176,6 @@ function getCountByColumn(data, column, sYearManner, sRace, sEdu){
     }
 
     if (column in row) {
-      if (row[column] === "9" || row[column] === ""){
-        row[column] = "99";
-      }
       if (row[column] in columnData){
         columnData[row[column]] += row.count;
       } else {
@@ -206,6 +207,7 @@ function getColumnCountByYear(data, column, sYearManner, sRace, sEdu){
       return;
     }
     if (row.year in columnData) {
+      console.log(row);
       if (row[column] in columnData[row.year]){
         columnData[row.year][row[column]].count += row.count;
       }
@@ -227,6 +229,7 @@ function getColumnCountByYear(data, column, sYearManner, sRace, sEdu){
           id: "mannerBar" + row.year + row[column]};
     }
   })
+  console.log(columnData)
   return columnData;
 }
 
@@ -242,7 +245,6 @@ function cumulate(data){
 }
 
 function createMannerView (data) {
-    
   // first, sort the data by 2013 numbers
 
   var groupedByManner = getColumnCountByYear(data,"manner",[],[],[]);
@@ -257,7 +259,7 @@ function createMannerView (data) {
   var data2013 = cumulate(Object.keys(groupedByManner["2013"]).map(function(key) {
     return groupedByManner["2013"][key];
   }));
-
+  console.log("2003",data2003);
   var svg = d3.select("#mannerViz");
 
   var max2003 = data2003[data2003.length-1].cumulative + data2003[data2003.length-1].count;
@@ -1122,7 +1124,7 @@ function createActivityView(data){
     g.append("circle")
         .attr("cx", function(d,i){return (i+.5)*chartWidth/act_indices.length + margin;})
         .attr("cy", function(d,i){return ((i%2) + .5)*(chartHeight/2) + margin + padding;})
-        .attr("r", function(d){console.log(ACTIIVITY[d],activities[d]); return +activities[d];})
+        .attr("r", function(d){console.log(ACTIVITY[d],activities[d]); return +activities[d];})
         .style("fill", "red")
         .style("opacity",".3");
 
