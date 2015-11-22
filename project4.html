@@ -216,15 +216,15 @@ function getColumnCountByYear(data, column, sYearManner, sRace, sEdu, sPlace, sA
   var columnData = {};
     
   data.forEach(function(row){
-    ["2003", "2008", "2013"].forEach(function(yr){
-        columnData[row.year] = {};
-        columnData[yr][row[column]]= {
-          year: yr,
-          column: column,
-          columnValue: 0,
-          count: 0,
-          id: "mannerBar" + row.year + row[column]};
-    })
+    // ["2003", "2008", "2013"].forEach(function(yr){
+    //     columnData[row.year] = {};
+    //     columnData[yr][row[column]]= {
+    //       year: yr,
+    //       column: column,
+    //       columnValue: 0,
+    //       count: 0,
+    //       id: "mannerBar" + row.year + row[column]};
+    // })
 
     if (row.manner === ""){
       row.manner = "Blank";
@@ -1056,7 +1056,8 @@ function createPlaceView(data){
     var g = svg.selectAll("g")
     .data(place_indices)
     .enter()
-    .append("g");
+    .append("g")
+    .attr("class", "placeSize");
 
     g.append('image')
         .attr('xlink:href', function(d){return 'project4_icons-0'+d+'.png';})
@@ -1071,6 +1072,39 @@ function createPlaceView(data){
         .attr("y", function(d,i){return (i%2)*(chartHeight/2) + margin;})        
         .style("text-anchor","middle");
    
+}
+function updatePlaceView (data, sYearManner, sRace, sEdu, sAct) {
+    
+  // first, sort the data by 2013 numbers
+  var groupedByPlace = getCountByColumn(data,"race",sYearManner,sRace,sEdu, [], sAct);
+
+  var totalcount = groupedByPlace["total"];
+  delete groupedByPlace["total"]
+
+  placeData = cumulate(Object.keys(groupedByPlace).map(function(placeKey) {
+    return {activity: placeKey, count: groupedByAct[placeKey]};
+  }));
+
+  var svg = d3.select("#viz_place");
+
+  var radius = 200;
+
+  var places = svg.selectAll(".placeSize")
+    .each(function(d,i) {
+      var thisplace = placeData.filter(function(row) {
+        return row.place === d.place;});
+      if (thisplace.length > 0){
+        d.count = thisact[0].count;
+        d.cumulative = thisact[0].cumulative;
+      } else {
+        d.count = 0;
+      }
+      
+    })
+    .transition()
+    .duration(1000)
+    .attr("width", function(d,i) {return +places[d];})
+    .attr("height", function(d,i){return +places[d];});
 }
 function createActivityView(data){
     var groupedByAct = getCountByColumn(data,"activity",[],[],[],[],[]);
@@ -1098,7 +1132,9 @@ function createActivityView(data){
     var g = svg.selectAll("g")
     .data(actData)
     .enter()
-    .append("g");
+    .append("g")
+    .attr("class", "activitySize");
+
    
     // g.append('image')
     //     .attr('xlink:href', function(d){return 'project4_icons-0'+d+'.png';})
@@ -1133,6 +1169,7 @@ function createActivityView(data){
           updateMannerView(GLOBAL.data, GLOBAL.selected.race, GLOBAL.selected.education, GLOBAL.selected.place, GLOBAL.selected.activity);
           updateEducationView(GLOBAL.data, GLOBAL.selected.yearManner, GLOBAL.selected.race, GLOBAL.selected.place, GLOBAL.selected.activity);
           updateRaceView(GLOBAL.data, GLOBAL.selected.yearManner, GLOBAL.selected.education, GLOBAL.selected.place, GLOBAL.selected.activity);
+          updatePlaceView(GLOBAL.data, GLOBAL.selected.yearManner, GLOBAL.selected.race, GLOBAL.selected.education, GLOBAL.selected.activity)
           console.log(GLOBAL.selected);
         });
 
@@ -1143,7 +1180,38 @@ function createActivityView(data){
         .style("text-anchor","middle");
           
 }
+function updateActivityView (data, sYearManner, sRace, sEdu, sPlace) {
+    
+  // first, sort the data by 2013 numbers
+  var groupedByAct = getCountByColumn(data,"race",sYearManner,sRace,sEdu, sPlace, []);
 
+  var totalcount = groupedByAct["total"];
+  delete groupedByAct["total"]
+
+  actData = cumulate(Object.keys(groupedByAct).map(function(actKey) {
+    return {activity: actKey, count: groupedByAct[actKey]};
+  }));
+
+  var svg = d3.select("#viz_activity");
+
+  var radius = 200;
+
+  var acts = svg.selectAll(".activitySize")
+    .each(function(d,i) {
+      var thisact = actData.filter(function(row) {
+        return row.activity === d.activity;});
+      if (thisact.length > 0){
+        d.count = thisact[0].count;
+        d.cumulative = thisact[0].cumulative;
+      } else {
+        d.count = 0;
+      }
+      
+    })
+    .transition()
+    .duration(1000)
+    .attr("radius", function(d,i) {return d.count;});
+}
 
 
     </script>
