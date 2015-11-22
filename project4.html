@@ -47,8 +47,8 @@
       <svg id="raceViz" height="250" width="400" style="border: 1px solid grey;">
       </svg>
       <svg id="educationViz" height="250" width="400" style="border: 1px solid grey;"></svg>
-      <svg id="viz_place" height="500" width="800" style="border: 1px solid grey;"></svg>
-      <svg id="viz_activity" height="500" width="800" style="border: 1px solid grey;"></svg>
+      <svg id="viz_place" height="400" width="605" style="border: 1px solid grey;"></svg>
+      <svg id="viz_activity" height="400" width="605" style="border: 1px solid grey;"></svg>
     </div>
 
     <script>
@@ -104,7 +104,27 @@ var numberToLabel = {
     "16": "Four Years of College",
     "17": "Five or More Years of College",
     "99": "Not Stated",
-  }
+  },
+  place : {
+    "0" : "Home",
+    "1" : "Residential institution",
+    "2" : "School, other institution and public administrative area",
+    "3" : "Sports and athletics area",
+    "4" : "Street and highway",
+    "5" : "Trade and service area",
+    "6" : "Industrial and construction area",
+    "7" : "Farm",
+    "8" : "Other Specified Places"
+    },
+activity : {
+    "0":"While engaged in sports activity",
+    "1":"While engaged in leisure activity",
+    "2":"While working for income",
+    "3":"While engaged in other types of work",
+    "4":"While resting, sleeping, eating (vital activities)",
+    "8":"While engaged in other specified activities",
+    "9":"During unspecified activity"
+    }
 };
 
 var GLOBAL ={
@@ -113,19 +133,21 @@ var GLOBAL ={
     race: [],
     education: [],
     yearManner: [],
+    place: [],
+    activity: [],
   }
 };
 
 function run () {
     
-    var svgs = d3.select("svg");
-    svgs.append("text")
-	.attr("id","loading")
-	.attr("x",+svgs.attr("width")/2)
-	.attr("y",+svgs.attr("height")/2)
-	.attr("dy","0.35em")
-	.style("text-anchor","middle")
-	.text("loading data...");
+  var svgs = d3.select("svg");
+  svgs.append("text")
+  	.attr("id","loading")
+  	.attr("x",+svgs.attr("width")/2)
+  	.attr("y",+svgs.attr("height")/2)
+  	.attr("dy","0.35em")
+  	.style("text-anchor","middle")
+  	.text(function (d,i) {return "loading data...";});
 
     getData("",function(data) {
       GLOBAL.data = data;
@@ -144,10 +166,12 @@ function run () {
  * the data)
  * 
  */
-function getCountByColumn(data, column, sYearManner, sRace, sEdu){
+function getCountByColumn(data, column, sYearManner, sRace, sEdu, sPlace, sAct){
   var checkYearManner = sYearManner.length > 0 ? 1 : 0;
   var checkRace = sRace.length > 0 ? 1 : 0;
   var checkEdu = sEdu.length > 0 ? 1 : 0;
+  var checkPlace = sPlace.length > 0 ? 1 : 0;
+  var checkAct = sAct.length > 0 ? 1 : 0;
 
   var columnData = {total: 0};
 
@@ -164,6 +188,10 @@ function getCountByColumn(data, column, sYearManner, sRace, sEdu){
       return;
     } else if (checkEdu && sEdu.indexOf(row.education) === -1){
       return;
+    } else if (checkPlace && sPlace.indexOf(row.place) === -1){
+      return;
+    } else if (checkAct && sAct.indexOf(row.activity) === -1){
+      return;
     }
 
     if (column in row) {
@@ -178,13 +206,32 @@ function getCountByColumn(data, column, sYearManner, sRace, sEdu){
   return columnData;
 }
 
-function getColumnCountByYear(data, column, sYearManner, sRace, sEdu){
+function getColumnCountByYear(data, column, sYearManner, sRace, sEdu, sPlace, sAct){
   var checkYearManner = sYearManner.length > 0 ? 1 : 0;
   var checkRace = sRace.length > 0 ? 1 : 0;
   var checkEdu = sEdu.length > 0 ? 1 : 0;
+  var checkPlace = sPlace.length > 0 ? 1 : 0;
+  var checkAct = sAct.length > 0 ? 1 : 0;
 
   var columnData = {};
+
+  //Initialize this so that we have all the data but that the count is zero.
+  //this is done to handle cases where we're updating but don't have data
+  ["2003", "2008", "2013"].forEach(function(yr){
+    columnData[yr] = {};
+    Object.keys(numberToLabel[column]).forEach(function (colV) {
+      columnData[yr][colV]= {
+        year: yr,
+        column: column,
+        columnValue: colV,
+        count: 0,
+        id: "mannerBar" + yr + colV};
+    });
+  });
+
+    
   data.forEach(function(row){
+    
     if (row.manner === ""){
       row.manner = "Blank";
     }
@@ -194,29 +241,15 @@ function getColumnCountByYear(data, column, sYearManner, sRace, sEdu){
       return;
     } else if (checkEdu && sEdu.indexOf(row.education) === -1){
       return;
+    } else if (checkPlace && sPlace.indexOf(row.place) === -1){
+      return;
+    } else if (checkAct && sAct.indexOf(row.activity) === -1){
+      return;
     }
-    if (row.year in columnData) {
-      if (row[column] in columnData[row.year]){
-        columnData[row.year][row[column]].count += row.count;
-      }
-      else {
-        columnData[row.year][row[column]] = {
-          year: row.year,
-          column: column,
-          columnValue: row[column],
-          count: row.count,
-          id: "mannerBar" + row.year + row[column]};
-      }
-    } else {
-      columnData[row.year] = {};
-      columnData[row.year][row[column]] = {
-          year: row.year,
-          column: column,
-          columnValue: row[column],
-          count: row.count,
-          id: "mannerBar" + row.year + row[column]};
-    }
-  })
+
+    //Since we've already initialized everything, we're good to go!
+    columnData[row.year][row[column]].count += row.count;
+  }); 
   return columnData;
 }
 
@@ -234,7 +267,7 @@ function cumulate(data){
 function createMannerView (data) {
   // first, sort the data by 2013 numbers
 
-  var groupedByManner = getColumnCountByYear(data,"manner",[],[],[]);
+  var groupedByManner = getColumnCountByYear(data,"manner",[],[],[],[],[]);
 
   var data2003 = cumulate(Object.keys(groupedByManner["2003"]).map(function(key) {
     return groupedByManner["2003"][key];
@@ -345,9 +378,10 @@ function createMannerView (data) {
       return xs[d.year] -barWidth/2;
     })
     .attr("y", function(d){
-      if (d.year === 2003) {
+      if (d.year == "2003") {
+        console.log(y2003(d.cumulative) - height2003(d.count));
         return y2003(d.cumulative) - height2003(d.count);
-      } else if (d.year === 2008) {
+      } else if (d.year == "2008") {
         return y2008(d.cumulative) - height2008(d.count);
       } else {
         return y2013(d.cumulative) - height2013(d.count);
@@ -356,9 +390,9 @@ function createMannerView (data) {
     })
     .attr("width", barWidth)
     .attr("height", function(d) {
-      if (d.year === 2003) {
+      if (d.year === "2003") {
         return height2003(d.count);
-      } else if (d.year === 2008) {
+      } else if (d.year === "2008") {
         return height2008(d.count);
       } else {
         return height2013(d.count);
@@ -395,8 +429,10 @@ function createMannerView (data) {
         d3.select(this)
           .attr("stroke-width",2);
       }
-      updateRaceView(GLOBAL.data, GLOBAL.selected.yearManner, GLOBAL.selected.education);
-      updateEducationView(GLOBAL.data, GLOBAL.selected.yearManner, GLOBAL.selected.race);
+      updateRaceView(GLOBAL.data, GLOBAL.selected.yearManner, GLOBAL.selected.education, GLOBAL.selected.place, GLOBAL.selected.activity);
+      updateEducationView(GLOBAL.data, GLOBAL.selected.yearManner, GLOBAL.selected.race, GLOBAL.selected.place, GLOBAL.selected.activity);
+      updatePlaceView(GLOBAL.data, GLOBAL.selected.yearManner, GLOBAL.selected.race, GLOBAL.selected.education, GLOBAL.selected.activity);
+      updateActivityView(GLOBAL.data, GLOBAL.selected.yearManner, GLOBAL.selected.race, GLOBAL.selected.education, GLOBAL.selected.place);
       console.log(GLOBAL.selected);
     })
     .attr("id", function(d,i){
@@ -451,12 +487,12 @@ function createMannerView (data) {
     });
 }
 
-function updateMannerView (data, sRace, sEdu) {
+function updateMannerView (data, sRace, sEdu, sPlace, sAct) {
   // first, sort the data by 2013 numbers
   var groupedByManner = {};
-  groupedByManner = getColumnCountByYear(data,"manner",[],sRace,sEdu);
+  groupedByManner = getColumnCountByYear(data,"manner",[],sRace,sEdu,sPlace,sAct);
 
-    var data2003 = cumulate(Object.keys(groupedByManner["2003"]).map(function(key) {
+  var data2003 = cumulate(Object.keys(groupedByManner["2003"]).map(function(key) {
     return groupedByManner["2003"][key];
   }));
   var data2008 = cumulate(Object.keys(groupedByManner["2008"]).map(function(key) {
@@ -547,7 +583,7 @@ function updateMannerView (data, sRace, sEdu) {
 function createRaceView (data) {
     
   // first, sort the data by 2013 numbers
-  var groupedByRace = getCountByColumn(data,"race",[],[],[]);
+  var groupedByRace = getCountByColumn(data,"race",[],[],[],[],[]);
 
   var totalcount = groupedByRace["total"];
   delete groupedByRace["total"]
@@ -637,8 +673,10 @@ function createRaceView (data) {
         d3.select(this)
           .attr("stroke-width",2);
       }
-      updateMannerView(GLOBAL.data, GLOBAL.selected.race, GLOBAL.selected.education);
-      updateEducationView(GLOBAL.data, GLOBAL.selected.yearManner, GLOBAL.selected.race);
+      updateMannerView(GLOBAL.data, GLOBAL.selected.race, GLOBAL.selected.education, GLOBAL.selected.place, GLOBAL.selected.activity);
+      updateEducationView(GLOBAL.data, GLOBAL.selected.yearManner, GLOBAL.selected.race, GLOBAL.selected.place, GLOBAL.selected.activity);
+      updatePlaceView(GLOBAL.data, GLOBAL.selected.yearManner, GLOBAL.selected.race, GLOBAL.selected.education, GLOBAL.selected.activity);
+      updateActivityView(GLOBAL.data, GLOBAL.selected.yearManner, GLOBAL.selected.race, GLOBAL.selected.education, GLOBAL.selected.place);
       console.log(GLOBAL.selected);
     });
 
@@ -690,10 +728,10 @@ function createRaceView (data) {
     });
 }
 
-function updateRaceView (data, sYearManner, sEdu) {
+function updateRaceView (data, sYearManner, sEdu, sPlace, sAct) {
     
   // first, sort the data by 2013 numbers
-  var groupedByRace = getCountByColumn(data,"race",sYearManner,[],sEdu);
+  var groupedByRace = getCountByColumn(data,"race",sYearManner,[],sEdu, sPlace, sAct);
 
   var totalcount = groupedByRace["total"];
   delete groupedByRace["total"]
@@ -751,7 +789,7 @@ function updateRaceView (data, sYearManner, sEdu) {
 function createEducationView (data) {
     
   // first, sort the data by 2013 numbers
-  var groupedByEducation = getCountByColumn(data,"education",[],[],[]);
+  var groupedByEducation = getCountByColumn(data,"education",[],[],[],[],[]);
 
   var totalcount = groupedByEducation["total"];
   delete groupedByEducation["total"]
@@ -859,8 +897,10 @@ function createEducationView (data) {
         d3.select(this)
           .attr("stroke-width",2);
       }
-      updateMannerView(GLOBAL.data, GLOBAL.selected.race, GLOBAL.selected.education);
-      updateRaceView(GLOBAL.data, GLOBAL.selected.yearManner, GLOBAL.selected.education);
+      updateMannerView(GLOBAL.data, GLOBAL.selected.race, GLOBAL.selected.education, GLOBAL.selected.place, GLOBAL.selected.activity);
+      updateRaceView(GLOBAL.data, GLOBAL.selected.yearManner, GLOBAL.selected.education, GLOBAL.selected.place, GLOBAL.selected.activity);
+      updatePlaceView(GLOBAL.data, GLOBAL.selected.yearManner, GLOBAL.selected.race, GLOBAL.selected.education, GLOBAL.selected.activity);
+      updateActivityView(GLOBAL.data, GLOBAL.selected.yearManner, GLOBAL.selected.race, GLOBAL.selected.education, GLOBAL.selected.place);
       console.log(GLOBAL.selected);
     });
 
@@ -912,10 +952,10 @@ function createEducationView (data) {
     });
 }
 
-function updateEducationView (data, sYearManner, sRace) {
+function updateEducationView (data, sYearManner, sRace, sPlace, sAct) {
     
   // first, sort the data by 2013 numbers
-  var groupedByEducation = getCountByColumn(data,"education",sYearManner, sRace,[]);
+  var groupedByEducation = getCountByColumn(data,"education",sYearManner, sRace,[], sPlace, sAct);
 
   var totalcount = groupedByEducation["total"];
   delete groupedByEducation["total"]
@@ -999,7 +1039,7 @@ function createPlaceView(data){
     var padding = 10;
     var chartHeight = height - 2*margin;
     var chartWidth = width - 2*margin;
-    var places = getCountByColumn(data, "place"); 
+    var places = getCountByColumn(data, "place", [],[],[],[],[]); 
 
     var place_indices= d3.keys(places);
     place_indices.pop();
@@ -1007,27 +1047,93 @@ function createPlaceView(data){
     var g = svg.selectAll("g")
     .data(place_indices)
     .enter()
-    .append("g");
+    .append("g")
+    .attr("class", "placeSize");
 
     g.append('image')
         .attr('xlink:href', function(d){return 'project4_icons-0'+d+'.png';})
         .attr('height', function(d){return +places[d];})
         .attr('width', function(d){return +places[d];})
-        .attr('x', function(d,i){return (i+.5)*chartWidth/place_indices.length -.5*+places[d] + margin;})
+        .attr('x', function(d,i){return (i%parseInt(place_indices.length/2)+.5)*chartWidth/parseInt(place_indices.length/2) -.5*+places[d] + margin;})
         .attr('y', function(d,i){return (i%2 +.5)*(chartHeight/2) - .5*+places[d] + margin + padding;});
 
     g.append("text")
-        .text(function(d){return PLACE[d];})
-        .attr("x", function(d,i){return (i+.5)*chartWidth/place_indices.length + margin;})
+        .text(function(d){return numberToLabel.place[d];})
+        .attr("x", function(d,i){return (i%parseInt(place_indices.length/2)+.5)*chartWidth/parseInt(place_indices.length/2) + margin;})
         .attr("y", function(d,i){return (i%2)*(chartHeight/2) + margin;})        
-        .style("text-anchor","middle")
-        .style("font-family","sans-serif")
-        .style("font-weight","bold")
-        .style("font-size","16px")
-        .style("fill", "#669999");
-   
+        .style("text-anchor","middle");
+
+    g.selectAll('image')
+        .on("mouseover",function(d,i) { 
+            console.log(d);
+          //this.setAttribute("xlink:href", 'project4_icons_orange-0'+d+'.png'); 
+        })
+        .on("mouseout",function(d, i) { 
+            console.log(d);
+            //this.setAttribute("xlink:href", 'project4_icons-0'+d+'.png');
+        })
+        .on("click", function(d,i) {
+          indexVal = GLOBAL.selected.place.indexOf(d);
+          console.log(indexVal);
+          if (indexVal > -1){
+            GLOBAL.selected.place.splice(indexVal, 1);
+            d3.select(this)
+              .attr("stroke-width",0);
+          } else {
+            GLOBAL.selected.place.push(d);
+            d3.select(this)
+              .attr("stroke-width",2);
+          }
+          updateMannerView(GLOBAL.data, GLOBAL.selected.race, GLOBAL.selected.education, GLOBAL.selected.place, GLOBAL.selected.activity);
+          updateEducationView(GLOBAL.data, GLOBAL.selected.yearManner, GLOBAL.selected.race, GLOBAL.selected.place, GLOBAL.selected.activity);
+          updateRaceView(GLOBAL.data, GLOBAL.selected.yearManner, GLOBAL.selected.education, GLOBAL.selected.place, GLOBAL.selected.activity);
+          updateActivityView(GLOBAL.data, GLOBAL.selected.yearManner, GLOBAL.selected.race, GLOBAL.selected.education, GLOBAL.selected.place);
+          
+          console.log(GLOBAL.selected);
+        });
+}
+function updatePlaceView (data, sYearManner, sRace, sEdu, sAct) {
+    
+  // first, sort the data by 2013 numbers
+  var groupedByPlace = getCountByColumn(data,"race",sYearManner,sRace,sEdu, [], sAct);
+
+  var totalcount = groupedByPlace["total"];
+  delete groupedByPlace["total"]
+
+  placeData = cumulate(Object.keys(groupedByPlace).map(function(placeKey) {
+    return {activity: placeKey, count: groupedByPlace[placeKey]};
+  }));
+
+  var svg = d3.select("#viz_place");
+
+  var radius = 200;
+
+  var places = svg.selectAll(".placeSize")
+    .each(function(d,i) {
+      var thisplace = placeData.filter(function(row) {
+        return row.place === d.place;});
+      if (thisplace.length > 0){
+        d.count = thisplace[0].count;
+        d.cumulative = thisplace[0].cumulative;
+      } else {
+        d.count = 0;
+      }
+      
+    })
+    .transition()
+    .duration(1000)
+    .attr("width", function(d,i) {return +places[d];})
+    .attr("height", function(d,i){return +places[d];});
 }
 function createActivityView(data){
+    var groupedByAct = getCountByColumn(data,"activity",[],[],[],[],[]);
+
+    var totalcount = groupedByAct["total"];
+    delete groupedByAct["total"]
+
+    actData = cumulate(Object.keys(groupedByAct).map(function(act_key) {
+        return {act: act_key, count: groupedByAct[act_key]};
+    }));
     var svg = d3.select("#viz_activity");
     var height = svg.attr("height");
     var width = svg.attr("width");
@@ -1037,69 +1143,96 @@ function createActivityView(data){
     var padding = 10;
     var chartHeight = height - 2*margin;
     var chartWidth = width - 2*margin;
-    var activities = getCountByColumn(data, "activity"); 
+    // var activities = getCountByColumn(data, "activity"); 
 
-    var act_indices= d3.keys(activities);
-    act_indices.pop();
+    // var act_indices= d3.keys(activities);
+    // act_indices.pop();
 
     var g = svg.selectAll("g")
-    .data(act_indices)
+    .data(actData)
     .enter()
-    .append("g");
+    .append("g")
+    .attr("class", "activitySize");
 
    
-    // g.selectAll("g")
-    //     .data(activities)
-    //     .enter()
-    //     .append('image')
+    // g.append('image')
     //     .attr('xlink:href', function(d){return 'project4_icons-0'+d+'.png';})
     //     .attr('height', function(d){return +activities[d]/1000;})
     //     .attr('width', function(d){return +activities[d]/1000;})
     //     .attr('x', function(d,i){return (i+.5)*chartWidth/act_indices.length + margin;})
     //     .attr('y', function(d,i){return (i%2 +1)*(chartHeight/2) + margin + padding;});
 
-    // g.selectAll("circle")
-    //     .data(act_indices)
-    //     .enter()
     g.append("circle")
-        .attr("cx", function(d,i){return (i+.5)*chartWidth/act_indices.length + margin;})
+        .attr("cx", function(d,i){return (i+.5)*chartWidth/actData.length + margin;})
         .attr("cy", function(d,i){return ((i%2) + .5)*(chartHeight/2) + margin + padding;})
-        .attr("r", function(d){return +activities[d];})
+        .attr("r", function(d){return d.count;}) //arbitary scaling
         .style("fill", "red")
-        .style("opacity",".3");
+        .style("opacity",".3")
+        .on("mouseover",function(d,i) { 
+          this.style.fill = "#ff9933"; 
+        })
+        .on("mouseout",function(d, i) { 
+            this.style.fill = "red";
+        })
+        .on("click", function(d,i) {
+          indexVal = GLOBAL.selected.activity.indexOf(d.act);
+          if (indexVal > -1){
+            GLOBAL.selected.activity.splice(indexVal, 1);
+            d3.select(this)
+              .attr("stroke-width",0);
+          } else {
+            GLOBAL.selected.activity.push(d.act);
+            d3.select(this)
+              .attr("stroke-width",2);
+          }
+          updateMannerView(GLOBAL.data, GLOBAL.selected.race, GLOBAL.selected.education, GLOBAL.selected.place, GLOBAL.selected.activity);
+          updateEducationView(GLOBAL.data, GLOBAL.selected.yearManner, GLOBAL.selected.race, GLOBAL.selected.place, GLOBAL.selected.activity);
+          updateRaceView(GLOBAL.data, GLOBAL.selected.yearManner, GLOBAL.selected.education, GLOBAL.selected.place, GLOBAL.selected.activity);
+          updatePlaceView(GLOBAL.data, GLOBAL.selected.yearManner, GLOBAL.selected.race, GLOBAL.selected.education, GLOBAL.selected.activity);
+
+          console.log(GLOBAL.selected);
+        });
 
     g.append("text")
-        .text(function(d){return ACTIVITY[d];})
-        .attr("x", function(d,i){return (i+.5)*chartWidth/act_indices.length + margin;})
+        .text(function(d){return numberToLabel.activity[d];})
+        .attr("x", function(d,i){return (i+.5)*chartWidth/actData.length + margin;})
         .attr("y", function(d,i){return (i%2)*(chartHeight/2) + margin;})        
-        .style("text-anchor","middle")
-        .style("font-family","sans-serif")
-        .style("font-weight","bold")
-        .style("font-size","12px")
-        .style("fill", "#669999");
+        .style("text-anchor","middle");
           
 }
+function updateActivityView (data, sYearManner, sRace, sEdu, sPlace) {
+    
+  // first, sort the data by 2013 numbers
+  var groupedByAct = getCountByColumn(data,"race",sYearManner,sRace,sEdu, sPlace, []);
 
-PLACE = {
-    "0" : "Home",
-    "1" : "Residential institution",
-    "2" : "School, other institution and public administrative area",
-    "3" : "Sports and athletics area",
-    "4" : "Street and highway",
-    "5" : "Trade and service area",
-    "6" : "Industrial and construction area",
-    "7" : "Farm",
-    "8" : "Other Specified Places"
+  var totalcount = groupedByAct["total"];
+  delete groupedByAct["total"]
+
+  actData = cumulate(Object.keys(groupedByAct).map(function(actKey) {
+    return {activity: actKey, count: groupedByAct[actKey]};
+  }));
+
+  var svg = d3.select("#viz_activity");
+
+  var radius = 200;
+
+  var acts = svg.selectAll(".activitySize")
+    .each(function(d,i) {
+      var thisact = actData.filter(function(row) {
+        return row.activity === d.activity;});
+      if (thisact.length > 0){
+        d.count = thisact[0].count;
+        d.cumulative = thisact[0].cumulative;
+      } else {
+        d.count = 0;
+      }
+      
+    })
+    .transition()
+    .duration(1000)
+    .attr("radius", function(d,i) {return d.count;});
 }
-ACTIVITY= {
-    "0":"While engaged in sports activity",
-    "1":"While engaged in leisure activity",
-    "2":"While working for income",
-    "3":"While engaged in other types of work",
-    "4":"While resting, sleeping, eating (vital activities)",
-    "8":"While engaged in other specified activities",
-    "9":"During unspecified activity"
-}
+
 
     </script>
     
