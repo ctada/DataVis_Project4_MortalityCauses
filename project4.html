@@ -47,8 +47,8 @@
       <svg id="raceViz" height="250" width="400" style="border: 1px solid grey;">
       </svg>
       <svg id="educationViz" height="250" width="400" style="border: 1px solid grey;"></svg>
-      <svg id="viz_place" height="500" width="800" style="border: 1px solid grey;"></svg>
-      <svg id="viz_activity" height="500" width="800" style="border: 1px solid grey;"></svg>
+      <svg id="viz_place" height="400" width="605" style="border: 1px solid grey;"></svg>
+      <svg id="viz_activity" height="400" width="605" style="border: 1px solid grey;"></svg>
     </div>
 
     <script>
@@ -140,14 +140,14 @@ var GLOBAL ={
 
 function run () {
     
-    var svgs = d3.select("svg");
-    svgs.append("text")
-	.attr("id","loading")
-	.attr("x",+svgs.attr("width")/2)
-	.attr("y",+svgs.attr("height")/2)
-	.attr("dy","0.35em")
-	.style("text-anchor","middle")
-	.text("loading data...");
+  var svgs = d3.select("svg");
+  svgs.append("text")
+  	.attr("id","loading")
+  	.attr("x",+svgs.attr("width")/2)
+  	.attr("y",+svgs.attr("height")/2)
+  	.attr("dy","0.35em")
+  	.style("text-anchor","middle")
+  	.text(function (d,i) {return "loading data...";});
 
     getData("",function(data) {
       GLOBAL.data = data;
@@ -214,18 +214,24 @@ function getColumnCountByYear(data, column, sYearManner, sRace, sEdu, sPlace, sA
   var checkAct = sAct.length > 0 ? 1 : 0;
 
   var columnData = {};
+
+  //Initialize this so that we have all the data but that the count is zero.
+  //this is done to handle cases where we're updating but don't have data
+  ["2003", "2008", "2013"].forEach(function(yr){
+    columnData[yr] = {};
+    Object.keys(numberToLabel[column]).forEach(function (colV) {
+      columnData[yr][colV]= {
+        year: yr,
+        column: column,
+        columnValue: colV,
+        count: 0,
+        id: "mannerBar" + yr + colV};
+    });
+  });
+
     
   data.forEach(function(row){
-    // ["2003", "2008", "2013"].forEach(function(yr){
-    //     columnData[row.year] = {};
-    //     columnData[yr][row[column]]= {
-    //       year: yr,
-    //       column: column,
-    //       columnValue: 0,
-    //       count: 0,
-    //       id: "mannerBar" + row.year + row[column]};
-    // })
-
+    
     if (row.manner === ""){
       row.manner = "Blank";
     }
@@ -241,28 +247,9 @@ function getColumnCountByYear(data, column, sYearManner, sRace, sEdu, sPlace, sA
       return;
     }
 
-    if (row.year in columnData) {
-      if (row[column] in columnData[row.year]){
-        columnData[row.year][row[column]].count += row.count;
-      }
-      else {
-        columnData[row.year][row[column]] = {
-          year: row.year,
-          column: column,
-          columnValue: row[column],
-          count: row.count,
-          id: "mannerBar" + row.year + row[column]};
-      }
-    } else {
-      columnData[row.year] = {};
-      columnData[row.year][row[column]] = {
-          year: row.year,
-          column: column,
-          columnValue: row[column],
-          count: row.count,
-          id: "mannerBar" + row.year + row[column]};
-    }
-  })
+    //Since we've already initialized everything, we're good to go!
+    columnData[row.year][row[column]].count += row.count;
+  }); 
   return columnData;
 }
 
@@ -391,9 +378,10 @@ function createMannerView (data) {
       return xs[d.year] -barWidth/2;
     })
     .attr("y", function(d){
-      if (d.year === 2003) {
+      if (d.year == "2003") {
+        console.log(y2003(d.cumulative) - height2003(d.count));
         return y2003(d.cumulative) - height2003(d.count);
-      } else if (d.year === 2008) {
+      } else if (d.year == "2008") {
         return y2008(d.cumulative) - height2008(d.count);
       } else {
         return y2013(d.cumulative) - height2013(d.count);
@@ -402,9 +390,9 @@ function createMannerView (data) {
     })
     .attr("width", barWidth)
     .attr("height", function(d) {
-      if (d.year === 2003) {
+      if (d.year === "2003") {
         return height2003(d.count);
-      } else if (d.year === 2008) {
+      } else if (d.year === "2008") {
         return height2008(d.count);
       } else {
         return height2013(d.count);
@@ -503,7 +491,6 @@ function updateMannerView (data, sRace, sEdu, sPlace, sAct) {
   // first, sort the data by 2013 numbers
   var groupedByManner = {};
   groupedByManner = getColumnCountByYear(data,"manner",[],sRace,sEdu,sPlace,sAct);
-  console.log(groupedByManner);
 
   var data2003 = cumulate(Object.keys(groupedByManner["2003"]).map(function(key) {
     return groupedByManner["2003"][key];
@@ -965,7 +952,7 @@ function createEducationView (data) {
     });
 }
 
-function updateEducationView (data, sYearManner, sRace) {
+function updateEducationView (data, sYearManner, sRace, sPlace, sAct) {
     
   // first, sort the data by 2013 numbers
   var groupedByEducation = getCountByColumn(data,"education",sYearManner, sRace,[], sPlace, sAct);
@@ -1086,13 +1073,14 @@ function createPlaceView(data){
             //this.setAttribute("xlink:href", 'project4_icons-0'+d+'.png');
         })
         .on("click", function(d,i) {
-          indexVal = GLOBAL.selected.place.indexOf(d.place);
+          indexVal = GLOBAL.selected.place.indexOf(d);
+          console.log(indexVal);
           if (indexVal > -1){
             GLOBAL.selected.place.splice(indexVal, 1);
             d3.select(this)
               .attr("stroke-width",0);
           } else {
-            GLOBAL.selected.activity.push(d.place);
+            GLOBAL.selected.place.push(d);
             d3.select(this)
               .attr("stroke-width",2);
           }
@@ -1113,7 +1101,7 @@ function updatePlaceView (data, sYearManner, sRace, sEdu, sAct) {
   delete groupedByPlace["total"]
 
   placeData = cumulate(Object.keys(groupedByPlace).map(function(placeKey) {
-    return {activity: placeKey, count: groupedByAct[placeKey]};
+    return {activity: placeKey, count: groupedByPlace[placeKey]};
   }));
 
   var svg = d3.select("#viz_place");
@@ -1125,8 +1113,8 @@ function updatePlaceView (data, sYearManner, sRace, sEdu, sAct) {
       var thisplace = placeData.filter(function(row) {
         return row.place === d.place;});
       if (thisplace.length > 0){
-        d.count = thisact[0].count;
-        d.cumulative = thisact[0].cumulative;
+        d.count = thisplace[0].count;
+        d.cumulative = thisplace[0].cumulative;
       } else {
         d.count = 0;
       }

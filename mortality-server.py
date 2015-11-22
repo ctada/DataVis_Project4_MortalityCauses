@@ -45,27 +45,6 @@ def pullVizData():
 
     avgAgeData = {}
     try:
-        # cur.execute("""SELECT mortality.year, 
-        #                     mortality.Education,
-        #                     mortality.Race_Recode_5, 
-        #                     mortality.Place_Of_Death,
-        #                     mortality.Activity_Code,
-        #                     mortality.Manner_Of_Death, 
-        #                     COUNT(mortality.year)
-        #                 FROM mortality 
-        #                 WHERE mortality.Education != '99' AND 
-        #                     mortality.Education != '9' AND 
-        #                     mortality.Education != '' AND 
-        #                     mortality.Place_Of_Death != '9' AND
-        #                     mortality.Activity_Code != '' AND
-        #                     mortality.Activity_Code != '9' AND
-        #                     mortality.Manner_Of_Death !=''  
-        #                 GROUP BY mortality.year, 
-        #                     mortality.Education,
-        #                     mortality.Race_Recode_5, 
-        #                     mortality.Place_Of_Death,
-        #                     mortality.Activity_Code,
-        #                     mortality.Manner_Of_Death """)
         cur.execute("""SELECT mortality.year, 
                             mortality.Education,
                             mortality.Race_Recode_5, 
@@ -74,12 +53,33 @@ def pullVizData():
                             mortality.Manner_Of_Death, 
                             COUNT(mortality.year)
                         FROM mortality 
+                        WHERE mortality.Education != '99' AND 
+                            mortality.Education != '9' AND 
+                            mortality.Education != '' AND 
+                            mortality.Place_Of_Death != '9' AND
+                            mortality.Activity_Code != '' AND
+                            mortality.Activity_Code != '9' AND
+                            mortality.Manner_Of_Death !=''  
                         GROUP BY mortality.year, 
                             mortality.Education,
                             mortality.Race_Recode_5, 
                             mortality.Place_Of_Death,
                             mortality.Activity_Code,
                             mortality.Manner_Of_Death """)
+        # cur.execute("""SELECT mortality.year, 
+        #                     mortality.Education,
+        #                     mortality.Race_Recode_5, 
+        #                     mortality.Place_Of_Death,
+        #                     mortality.Activity_Code,
+        #                     mortality.Manner_Of_Death, 
+        #                     COUNT(mortality.year)
+        #                 FROM mortality 
+        #                 GROUP BY mortality.year, 
+        #                     mortality.Education,
+        #                     mortality.Race_Recode_5, 
+        #                     mortality.Place_Of_Death,
+        #                     mortality.Activity_Code,
+        #                     mortality.Manner_Of_Death """)
 
 
         data = [{"year": int(year),
@@ -90,7 +90,6 @@ def pullVizData():
             "manner": manner,
             "count":count} for (year, education, race, place, activity, manner, count) in cur.fetchall()]
 
-        print data 
         #groupedData = group_by(data, "year")
         #jsonData = []
 
