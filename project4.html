@@ -379,7 +379,6 @@ function createMannerView (data) {
     })
     .attr("y", function(d){
       if (d.year == "2003") {
-        console.log(y2003(d.cumulative) - height2003(d.count));
         return y2003(d.cumulative) - height2003(d.count);
       } else if (d.year == "2008") {
         return y2008(d.cumulative) - height2008(d.count);
@@ -786,12 +785,6 @@ function updateRaceView (data, sYearManner, sEdu, sPlace, sAct) {
     .attrTween("d", function(d,i) {
       var interpolateEnd = d3.interpolate(d.endAngle,angle(d.count + d.cumulative));
       var interpolateStart = d3.interpolate(d.startAngle,angle(d.cumulative));
-      // console.log({
-      //   oldstart: d.startAngle,
-      //   oldend: d.endAngle,
-      //   newstart: angle(d.cumulative),
-      //   newend: angle(d.count + d.cumulative),
-      // });
       return function(t) {
           d.endAngle = interpolateEnd(t);
           d.startAngle = interpolateStart(t);
