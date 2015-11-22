@@ -441,8 +441,10 @@ function createMannerView (data) {
         d3.select(this)
           .attr("stroke-width",2);
       }
-      updateRaceView(GLOBAL.data, GLOBAL.selected.yearManner, GLOBAL.selected.education);
-      updateEducationView(GLOBAL.data, GLOBAL.selected.yearManner, GLOBAL.selected.race);
+      updateRaceView(GLOBAL.data, GLOBAL.selected.yearManner, GLOBAL.selected.education, GLOBAL.selected.place, GLOBAL.selected.activity);
+      updateEducationView(GLOBAL.data, GLOBAL.selected.yearManner, GLOBAL.selected.race, GLOBAL.selected.place, GLOBAL.selected.activity);
+      updatePlaceView(GLOBAL.data, GLOBAL.selected.yearManner, GLOBAL.selected.race, GLOBAL.selected.education, GLOBAL.selected.activity);
+      updateActivityView(GLOBAL.data, GLOBAL.selected.yearManner, GLOBAL.selected.race, GLOBAL.selected.education, GLOBAL.selected.place);
       console.log(GLOBAL.selected);
     })
     .attr("id", function(d,i){
@@ -686,7 +688,8 @@ function createRaceView (data) {
       }
       updateMannerView(GLOBAL.data, GLOBAL.selected.race, GLOBAL.selected.education, GLOBAL.selected.place, GLOBAL.selected.activity);
       updateEducationView(GLOBAL.data, GLOBAL.selected.yearManner, GLOBAL.selected.race, GLOBAL.selected.place, GLOBAL.selected.activity);
-      updateRaceView(GLOBAL.data, GLOBAL.selected.yearManner, GLOBAL.selected.education, GLOBAL.selected.place, GLOBAL.selected.activity);
+      updatePlaceView(GLOBAL.data, GLOBAL.selected.yearManner, GLOBAL.selected.race, GLOBAL.selected.education, GLOBAL.selected.activity);
+      updateActivityView(GLOBAL.data, GLOBAL.selected.yearManner, GLOBAL.selected.race, GLOBAL.selected.education, GLOBAL.selected.place);
       console.log(GLOBAL.selected);
     });
 
@@ -908,8 +911,9 @@ function createEducationView (data) {
           .attr("stroke-width",2);
       }
       updateMannerView(GLOBAL.data, GLOBAL.selected.race, GLOBAL.selected.education, GLOBAL.selected.place, GLOBAL.selected.activity);
-      updateEducationView(GLOBAL.data, GLOBAL.selected.yearManner, GLOBAL.selected.race, GLOBAL.selected.place, GLOBAL.selected.activity);
       updateRaceView(GLOBAL.data, GLOBAL.selected.yearManner, GLOBAL.selected.education, GLOBAL.selected.place, GLOBAL.selected.activity);
+      updatePlaceView(GLOBAL.data, GLOBAL.selected.yearManner, GLOBAL.selected.race, GLOBAL.selected.education, GLOBAL.selected.activity);
+      updateActivityView(GLOBAL.data, GLOBAL.selected.yearManner, GLOBAL.selected.race, GLOBAL.selected.education, GLOBAL.selected.place);
       console.log(GLOBAL.selected);
     });
 
@@ -1071,7 +1075,34 @@ function createPlaceView(data){
         .attr("x", function(d,i){return (i%parseInt(place_indices.length/2)+.5)*chartWidth/parseInt(place_indices.length/2) + margin;})
         .attr("y", function(d,i){return (i%2)*(chartHeight/2) + margin;})        
         .style("text-anchor","middle");
-   
+
+    g.selectAll('image')
+        .on("mouseover",function(d,i) { 
+            console.log(d);
+          //this.setAttribute("xlink:href", 'project4_icons_orange-0'+d+'.png'); 
+        })
+        .on("mouseout",function(d, i) { 
+            console.log(d);
+            //this.setAttribute("xlink:href", 'project4_icons-0'+d+'.png');
+        })
+        .on("click", function(d,i) {
+          indexVal = GLOBAL.selected.place.indexOf(d.place);
+          if (indexVal > -1){
+            GLOBAL.selected.place.splice(indexVal, 1);
+            d3.select(this)
+              .attr("stroke-width",0);
+          } else {
+            GLOBAL.selected.activity.push(d.place);
+            d3.select(this)
+              .attr("stroke-width",2);
+          }
+          updateMannerView(GLOBAL.data, GLOBAL.selected.race, GLOBAL.selected.education, GLOBAL.selected.place, GLOBAL.selected.activity);
+          updateEducationView(GLOBAL.data, GLOBAL.selected.yearManner, GLOBAL.selected.race, GLOBAL.selected.place, GLOBAL.selected.activity);
+          updateRaceView(GLOBAL.data, GLOBAL.selected.yearManner, GLOBAL.selected.education, GLOBAL.selected.place, GLOBAL.selected.activity);
+          updateActivityView(GLOBAL.data, GLOBAL.selected.yearManner, GLOBAL.selected.race, GLOBAL.selected.education, GLOBAL.selected.place);
+          
+          console.log(GLOBAL.selected);
+        });
 }
 function updatePlaceView (data, sYearManner, sRace, sEdu, sAct) {
     
@@ -1169,7 +1200,8 @@ function createActivityView(data){
           updateMannerView(GLOBAL.data, GLOBAL.selected.race, GLOBAL.selected.education, GLOBAL.selected.place, GLOBAL.selected.activity);
           updateEducationView(GLOBAL.data, GLOBAL.selected.yearManner, GLOBAL.selected.race, GLOBAL.selected.place, GLOBAL.selected.activity);
           updateRaceView(GLOBAL.data, GLOBAL.selected.yearManner, GLOBAL.selected.education, GLOBAL.selected.place, GLOBAL.selected.activity);
-          updatePlaceView(GLOBAL.data, GLOBAL.selected.yearManner, GLOBAL.selected.race, GLOBAL.selected.education, GLOBAL.selected.activity)
+          updatePlaceView(GLOBAL.data, GLOBAL.selected.yearManner, GLOBAL.selected.race, GLOBAL.selected.education, GLOBAL.selected.activity);
+
           console.log(GLOBAL.selected);
         });
 
