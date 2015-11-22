@@ -379,7 +379,6 @@ function createMannerView (data) {
     })
     .attr("y", function(d){
       if (d.year == "2003") {
-        console.log(y2003(d.cumulative) - height2003(d.count));
         return y2003(d.cumulative) - height2003(d.count);
       } else if (d.year == "2008") {
         return y2008(d.cumulative) - height2008(d.count);
@@ -761,8 +760,9 @@ function updateRaceView (data, sYearManner, sEdu, sPlace, sAct) {
   .domain([0,totalcount])
   .range([0,2*Math.PI]);
 
-  var races = svg.selectAll(".raceslice")
-    .each(function(d,i) {
+  var races = svg.selectAll(".raceslice");
+
+    races.each(function(d,i) {
       var thisracedata = raceData.filter(function(row) {
         return row.race === d.race;});
       if (thisracedata.length > 0){
@@ -770,6 +770,13 @@ function updateRaceView (data, sYearManner, sEdu, sPlace, sAct) {
         d.cumulative = thisracedata[0].cumulative;
       } else {
         d.count = 0;
+        if (i === 0){
+          d.cumulative = 0;
+        } else {
+          prevElemData = races[0][i-1]["__data__"];
+          d.cumulative = prevElemData.cumulative + prevElemData.count;
+        }
+        
       }
       
     })
@@ -985,29 +992,35 @@ function updateEducationView (data, sYearManner, sRace, sPlace, sAct) {
   .domain([0,totalcount])
   .range([0,2*Math.PI]);
 
-  var educations = svg.selectAll(".educationslice")
-    .each(function(d,i) {
-      var thiseducationdata = educationData.filter(function(row) {
-        return row.education === d.education;});
-      if (thiseducationdata.length > 0){
-        d.count = thiseducationdata[0].count;
-        d.cumulative = thiseducationdata[0].cumulative;
+  var educations = svg.selectAll(".educationslice");
+  educations.each(function(d,i) {
+    var thiseducationdata = educationData.filter(function(row) {
+      return row.education === d.education;});
+    if (thiseducationdata.length > 0){
+      d.count = thiseducationdata[0].count;
+      d.cumulative = thiseducationdata[0].cumulative;
+    } else {
+      d.count = 0;
+      if (i === 0){
+        d.cumulative = 0;
       } else {
-        d.count = 0;
+        prevElemData = educations[0][i-1]["__data__"];
+        d.cumulative = prevElemData.cumulative + prevElemData.count;
       }
-      
-    })
-    .transition()
-    .duration(1000)
-    .attrTween("d", function(d,i) {
-      var interpolateEnd = d3.interpolate(d.endAngle,angle(d.count + d.cumulative));
-      var interpolateStart = d3.interpolate(d.startAngle,angle(d.cumulative));
-      return function(t) {
-          d.endAngle = interpolateEnd(t);
-          d.startAngle = interpolateStart(t);
-          return educationArc(d);
-      };
-    });
+    }
+    
+  })
+  .transition()
+  .duration(1000)
+  .attrTween("d", function(d,i) {
+    var interpolateEnd = d3.interpolate(d.endAngle,angle(d.count + d.cumulative));
+    var interpolateStart = d3.interpolate(d.startAngle,angle(d.cumulative));
+    return function(t) {
+        d.endAngle = interpolateEnd(t);
+        d.startAngle = interpolateStart(t);
+        return educationArc(d);
+    };
+  });
 }
 
 function getData (url, f) {
