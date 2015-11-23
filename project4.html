@@ -1127,7 +1127,6 @@ function updatePlaceView (data, sYearManner, sRace, sEdu, sAct) {
         return row.place === d.place;});
       if (thisplace.length > 0){
         d.count = thisplace[0].count;
-        d.cumulative = thisplace[0].cumulative;
       } else {
         d.count = 0;
       }
@@ -1135,8 +1134,8 @@ function updatePlaceView (data, sYearManner, sRace, sEdu, sAct) {
     })
     .transition()
     .duration(1000)
-    .attr("width", function(d,i) {return +places[d];})
-    .attr("height", function(d,i){return +places[d];});
+    .attr("width", function(d,i) {return d.count;})
+    .attr("height", function(d,i){return d.count;});
 }
 function createActivityView(data){
     var groupedByAct = getCountByColumn(data,"activity",[],[],[],[],[]);
@@ -1238,8 +1237,7 @@ function updateActivityView (data, sYearManner, sRace, sEdu, sPlace) {
           d.count = thisact[0].count;
         } else {
           d.count = 0;
-        }
-        
+        }    
     })
     .transition()
     .duration(1000)
