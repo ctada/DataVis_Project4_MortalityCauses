@@ -1127,7 +1127,6 @@ function updatePlaceView (data, sYearManner, sRace, sEdu, sAct) {
         return row.place === d.place;});
       if (thisplace.length > 0){
         d.count = thisplace[0].count;
-        d.cumulative = thisplace[0].cumulative;
       } else {
         d.count = 0;
       }
@@ -1135,8 +1134,8 @@ function updatePlaceView (data, sYearManner, sRace, sEdu, sAct) {
     })
     .transition()
     .duration(1000)
-    .attr("width", function(d,i) {return +places[d];})
-    .attr("height", function(d,i){return +places[d];});
+    .attr("width", function(d,i) {return d.count;})
+    .attr("height", function(d,i){return d.count;});
 }
 function createActivityView(data){
     var groupedByAct = getCountByColumn(data,"activity",[],[],[],[],[]);
@@ -1181,6 +1180,7 @@ function createActivityView(data){
         .attr("r", function(d){return d.count;}) //arbitary scaling
         .style("fill", "red")
         .style("opacity",".3")
+        .attr("class", "activityCircle")
         .on("mouseover",function(d,i) { 
           this.style.fill = "#ff9933"; 
         })
@@ -1215,35 +1215,34 @@ function createActivityView(data){
 }
 function updateActivityView (data, sYearManner, sRace, sEdu, sPlace) {
     
-  // first, sort the data by 2013 numbers
   var groupedByAct = getCountByColumn(data,"race",sYearManner,sRace,sEdu, sPlace, []);
 
   var totalcount = groupedByAct["total"];
-  delete groupedByAct["total"]
+    delete groupedByAct["total"]
 
-  actData = cumulate(Object.keys(groupedByAct).map(function(actKey) {
-    return {activity: actKey, count: groupedByAct[actKey]};
-  }));
+    actData = Object.keys(groupedByAct).map(function(act_key) {
+        return {act: act_key, count: groupedByAct[act_key]};
+    });
 
   var svg = d3.select("#viz_activity");
 
   var radius = 200;
-
-  var acts = svg.selectAll(".activitySize")
+  console.log("hi")
+  var acts = svg.selectAll(".activityCircle")
     .each(function(d,i) {
-      var thisact = actData.filter(function(row) {
-        return row.activity === d.activity;});
-      if (thisact.length > 0){
-        d.count = thisact[0].count;
-        d.cumulative = thisact[0].cumulative;
-      } else {
-        d.count = 0;
-      }
-      
+        console.log(d);
+        var thisact = actData.filter(function(row) {
+          return row.act === d.act;});
+        if (thisact.length > 0){
+          d.count = thisact[0].count;
+        } else {
+          d.count = 0;
+        }    
     })
     .transition()
     .duration(1000)
-    .attr("radius", function(d,i) {return d.count;});
+    .attr("r", function(d,i) {return d.count;});
+
 }
 
 
