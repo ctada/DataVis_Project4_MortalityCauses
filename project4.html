@@ -1068,7 +1068,8 @@ function createPlaceView(data){
         .attr('height', function(d){return +places[d];})
         .attr('width', function(d){return +places[d];})
         .attr('x', function(d,i){return (i%parseInt(place_indices.length/2)+.5)*chartWidth/parseInt(place_indices.length/2) -.5*+places[d] + margin;})
-        .attr('y', function(d,i){return (i%2 +.5)*(chartHeight/2) - .5*+places[d] + margin + padding;});
+        .attr('y', function(d,i){return (i%2 +.5)*(chartHeight/2) - .5*+places[d] + margin + padding;})
+        .attr('class', 'placeImage');
 
     g.append("text")
         .text(function(d){return numberToLabel.place[d];})
@@ -1076,14 +1077,15 @@ function createPlaceView(data){
         .attr("y", function(d,i){return (i%2)*(chartHeight/2) + margin;})        
         .style("text-anchor","middle");
 
-    g.selectAll('image')
+    g.selectAll('.placeImage')
         .on("mouseover",function(d,i) { 
             console.log(d);
           //this.setAttribute("xlink:href", 'project4_icons_orange-0'+d+'.png'); 
+            d3.select(this).attr("xlink:href", "project4_icons_orange-0"+d+".png");
         })
         .on("mouseout",function(d, i) { 
             console.log(d);
-            //this.setAttribute("xlink:href", 'project4_icons-0'+d+'.png');
+            d3.select(this).attr("xlink:href", "project4_icons-0"+d+".png");
         })
         .on("click", function(d,i) {
           indexVal = GLOBAL.selected.place.indexOf(d);
@@ -1101,14 +1103,16 @@ function createPlaceView(data){
           updateEducationView(GLOBAL.data, GLOBAL.selected.yearManner, GLOBAL.selected.race, GLOBAL.selected.place, GLOBAL.selected.activity);
           updateRaceView(GLOBAL.data, GLOBAL.selected.yearManner, GLOBAL.selected.education, GLOBAL.selected.place, GLOBAL.selected.activity);
           updateActivityView(GLOBAL.data, GLOBAL.selected.yearManner, GLOBAL.selected.race, GLOBAL.selected.education, GLOBAL.selected.place);
-          
+          var imgSelected = d3.select(this).attr("xlink:href") == "project4_icons-0"+d+".png" ? "project4_icons_orage-0"+d+".png" : "project4_icons-0"+d+".png";
+            d3.select(this).attr("xlink:href", imgSelected);
           console.log(GLOBAL.selected);
         });
 }
+
 function updatePlaceView (data, sYearManner, sRace, sEdu, sAct) {
     
   // first, sort the data by 2013 numbers
-  var groupedByPlace = getCountByColumn(data,"race",sYearManner,sRace,sEdu, [], sAct);
+  var groupedByPlace = getCountByColumn(data,"place",sYearManner,sRace,sEdu, [], sAct);
 
   var totalcount = groupedByPlace["total"];
   delete groupedByPlace["total"]
@@ -1121,12 +1125,13 @@ function updatePlaceView (data, sYearManner, sRace, sEdu, sAct) {
 
   var radius = 200;
 
-  var places = svg.selectAll(".placeSize")
+  var places = svg.selectAll(".placeImage")
     .each(function(d,i) {
       var thisplace = placeData.filter(function(row) {
         return row.place === d.place;});
       if (thisplace.length > 0){
         d.count = thisplace[0].count;
+        d.cumulative = thisplace[0].cumulative;
       } else {
         d.count = 0;
       }
@@ -1134,8 +1139,8 @@ function updatePlaceView (data, sYearManner, sRace, sEdu, sAct) {
     })
     .transition()
     .duration(1000)
-    .attr("width", function(d,i) {return d.count;})
-    .attr("height", function(d,i){return d.count;});
+    .attr("width", function(d,i) {console.log("place", groupedByPlace[d]); return +groupedByPlace[d];})
+    .attr("height", function(d,i){return +groupedByPlace[d];});
 }
 function createActivityView(data){
     var groupedByAct = getCountByColumn(data,"activity",[],[],[],[],[]);
@@ -1182,10 +1187,10 @@ function createActivityView(data){
         .style("opacity",".3")
         .attr("class", "activityCircle")
         .on("mouseover",function(d,i) { 
-          this.style.fill = "#ff9933"; 
+          d3.select(this).style("fill", "#ff9933"); 
         })
         .on("mouseout",function(d, i) { 
-            this.style.fill = "red";
+            d3.select(this).style("fill", "red");
         })
         .on("click", function(d,i) {
           indexVal = GLOBAL.selected.activity.indexOf(d.act);
@@ -1202,7 +1207,8 @@ function createActivityView(data){
           updateEducationView(GLOBAL.data, GLOBAL.selected.yearManner, GLOBAL.selected.race, GLOBAL.selected.place, GLOBAL.selected.activity);
           updateRaceView(GLOBAL.data, GLOBAL.selected.yearManner, GLOBAL.selected.education, GLOBAL.selected.place, GLOBAL.selected.activity);
           updatePlaceView(GLOBAL.data, GLOBAL.selected.yearManner, GLOBAL.selected.race, GLOBAL.selected.education, GLOBAL.selected.activity);
-
+          var colorSelected = colorSelected == "red" ? "#ff9933" : "red";
+          d3.select(this).style("fill", colorSelected);
           console.log(GLOBAL.selected);
         });
 
